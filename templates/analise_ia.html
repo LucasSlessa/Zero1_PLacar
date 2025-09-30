@@ -3,6 +3,155 @@
 {% block title %}Análise com IA - ZERO 1{% endblock %}
 
 {% block content %}
+<style>
+    #carouselAnalise {
+        min-height: 600px;
+    }
+    
+    #carouselAnalise .carousel-item {
+        transition: transform 0.6s ease-in-out;
+    }
+    
+    #carouselAnalise .carousel-indicators {
+        bottom: -50px;
+    }
+    
+    #carouselAnalise .carousel-indicators button {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: #6c757d;
+    }
+    
+    #carouselAnalise .carousel-indicators button.active {
+        background-color: #0d6efd;
+    }
+    
+    #carouselAnalise .carousel-control-prev-icon,
+    #carouselAnalise .carousel-control-next-icon {
+        filter: invert(1);
+    }
+    
+    .carousel-control-prev,
+    .carousel-control-next {
+        opacity: 0.8;
+    }
+    
+    .carousel-control-prev:hover,
+    .carousel-control-next:hover {
+        opacity: 1;
+    }
+    
+    /* Prevenir overflow e garantir que o modal funcione corretamente */
+    .modal-open {
+        overflow: hidden !important;
+    }
+    
+    /* Z-index correto para modal */
+    #modalRevelacao {
+        z-index: 1055 !important;
+    }
+    
+    #modalRevelacao .modal-dialog {
+        max-height: 90vh;
+        overflow-y: auto;
+        z-index: 1056 !important;
+    }
+    
+    #modalRevelacao .modal-content {
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    
+    /* Garantir que o backdrop funcione */
+    .modal-backdrop {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        z-index: 1050 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        background-color: #000 !important;
+    }
+    
+    .modal-backdrop.fade {
+        opacity: 0;
+    }
+    
+    .modal-backdrop.show {
+        opacity: 0.5 !important;
+    }
+    
+    /* Modal Customizado */
+    .custom-modal {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        z-index: 2147483647 !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .custom-modal-backdrop {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        background-color: rgba(0, 0, 0, 0.85) !important;
+        z-index: 2147483646 !important;
+    }
+    
+    .custom-modal-content {
+        position: relative !important;
+        z-index: 2147483647 !important;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 20px;
+        padding: 40px;
+        max-width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        color: white;
+        text-align: center;
+        animation: modalFadeIn 0.3s ease-out;
+    }
+    
+    .custom-modal-close {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        font-size: 1.5rem;
+        color: white;
+        cursor: pointer;
+        transition: all 0.3s;
+        z-index: 2147483647 !important;
+    }
+    
+    .custom-modal-close:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: scale(1.1);
+    }
+    
+    @keyframes modalFadeIn {
+        from {
+            opacity: 0;
+            transform: scale(0.9) translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+    }
+</style>
 <div class="row">
     <div class="col-12">
         <h1 class="mb-4">
@@ -63,6 +212,22 @@
                         </select>
                     </div>
 
+                    <div class="mb-3">
+                        <div class="card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border: none;">
+                            <div class="card-body p-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="ocultar_posicoes" name="ocultar_posicoes" value="1">
+                                    <label class="form-check-label text-white" for="ocultar_posicoes">
+                                        <i class="fas fa-eye-slash"></i> <strong>Modo Surpresa</strong> - Ocultar posições e rankings
+                                        <small class="d-block mt-1" style="opacity: 0.9;">
+                                            🎭 As equipes não verão sua posição no ranking, apenas análises e recomendações
+                                        </small>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle"></i> 
                         <strong>Como funciona:</strong> Nossa IA analisa os dados de desempenho e gera insights personalizados sobre:
@@ -99,6 +264,17 @@
                 </div>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Modal de Revelação Customizado (sem Bootstrap) -->
+<div id="modalRevelacao" class="custom-modal" style="display: none;">
+    <div class="custom-modal-backdrop" onclick="fecharModalRevelacao()"></div>
+    <div class="custom-modal-content">
+        <button class="custom-modal-close" onclick="fecharModalRevelacao()">
+            <i class="fas fa-times"></i>
+        </button>
+        <div id="modalContent"></div>
     </div>
 </div>
 
@@ -166,5 +342,136 @@ umMesAtras.setMonth(umMesAtras.getMonth() - 1);
 
 document.getElementById('data_fim').valueAsDate = hoje;
 document.getElementById('data_inicio').valueAsDate = umMesAtras;
+
+// Função auxiliar para decodificar HTML entities
+function decodeHtmlEntities(text) {
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = text;
+    return textarea.value;
+}
+
+// Event delegation para botões de revelação do pódio
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.btn-revelar')) {
+        const btn = e.target.closest('.btn-revelar');
+        const posicao = btn.dataset.posicao;
+        const equipeData = btn.dataset.equipe;
+        
+        try {
+            // Decodificar HTML entities antes de parsear
+            const equipeDataDecoded = decodeHtmlEntities(equipeData);
+            const equipe = JSON.parse(equipeDataDecoded);
+            revelarPosicao(posicao, equipe);
+        } catch (error) {
+            console.error('Erro ao parsear dados da equipe:', error);
+            console.log('Dados recebidos:', equipeData);
+        }
+    }
+});
+
+function revelarPosicao(posicao, equipe) {
+    if (!equipe || !equipe.nome) return;
+    
+    const medals = {1: '🥇', 2: '🥈', 3: '🥉'};
+    const titles = {1: 'CAMPEÃO', 2: '2º LUGAR', 3: '3º LUGAR'};
+    const colors = {1: '#FFD700', 2: '#C0C0C0', 3: '#CD7F32'};
+    const bgColors = {1: 'rgba(255, 215, 0, 0.2)', 2: 'rgba(192, 192, 192, 0.2)', 3: 'rgba(205, 127, 50, 0.2)'};
+    
+    const logoHtml = equipe.logo ? 
+        `<div style="margin: 30px auto; animation: zoomIn 0.8s ease-out;">
+            <img src="${equipe.logo}" alt="${equipe.nome}" 
+                 style="width: 250px; height: 250px; object-fit: contain; 
+                        background: white; border-radius: 20px; padding: 25px; 
+                        box-shadow: 0 15px 50px rgba(0,0,0,0.4);
+                        border: 5px solid ${colors[posicao]};">
+         </div>` : 
+        '';
+    
+    document.getElementById('modalContent').innerHTML = `
+        <div style="animation: fadeInDown 0.8s ease-out; padding: 20px;">
+            <!-- Medalha -->
+            <div style="animation: bounceIn 1s ease-out;">
+                <div style="font-size: 6rem; margin-bottom: 10px; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));">
+                    ${medals[posicao]}
+                </div>
+            </div>
+            
+            <!-- Título -->
+            <div style="background: ${bgColors[posicao]}; padding: 15px 30px; border-radius: 15px; display: inline-block; margin-bottom: 20px;">
+                <h2 style="font-size: 2.8rem; font-weight: bold; color: ${colors[posicao]}; 
+                           text-shadow: 2px 2px 8px rgba(0,0,0,0.5); margin: 0; letter-spacing: 2px;">
+                    ${titles[posicao]}
+                </h2>
+            </div>
+            
+            <!-- Logo -->
+            ${logoHtml}
+            
+            <!-- Nome da Equipe -->
+            <div style="animation: fadeIn 1.2s ease-in; margin-top: 20px;">
+                <h3 style="font-size: 2.5rem; font-weight: bold; margin-bottom: 15px; 
+                           text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">
+                    ${equipe.nome}
+                </h3>
+                
+                <!-- Pontuação -->
+                <div style="background: rgba(255,255,255,0.2); padding: 15px 40px; 
+                            border-radius: 50px; display: inline-block; margin-top: 10px;">
+                    <p style="font-size: 1.8rem; margin: 0; font-weight: 600;">
+                        <i class="fas fa-star" style="color: ${colors[posicao]}; margin-right: 10px;"></i>
+                        <strong style="font-size: 2.2rem;">${equipe.pontos}</strong> pontos
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <style>
+            @keyframes zoomIn {
+                from { transform: scale(0) rotate(-180deg); opacity: 0; }
+                to { transform: scale(1) rotate(0deg); opacity: 1; }
+            }
+            @keyframes bounceIn {
+                0% { transform: scale(0); opacity: 0; }
+                50% { transform: scale(1.2); }
+                100% { transform: scale(1); opacity: 1; }
+            }
+            @keyframes fadeInDown {
+                from { transform: translateY(-50px); opacity: 0; }
+                to { transform: translateY(0); opacity: 1; }
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+        </style>
+    `;
+    
+    // Abrir modal customizado (simples e direto)
+    document.getElementById('modalRevelacao').style.display = 'flex';
+    
+    // Ocultar rodapé e outros elementos
+    const footer = document.querySelector('footer');
+    const navbar = document.querySelector('nav');
+    if (footer) footer.style.display = 'none';
+    if (navbar) navbar.style.zIndex = '0';
+}
+
+// Função para fechar modal
+function fecharModalRevelacao() {
+    document.getElementById('modalRevelacao').style.display = 'none';
+    
+    // Restaurar rodapé e outros elementos
+    const footer = document.querySelector('footer');
+    const navbar = document.querySelector('nav');
+    if (footer) footer.style.display = '';
+    if (navbar) navbar.style.zIndex = '';
+}
+
+// Fechar com tecla ESC
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        fecharModalRevelacao();
+    }
+});
 </script>
 {% endblock %}

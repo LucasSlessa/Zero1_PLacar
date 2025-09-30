@@ -419,6 +419,7 @@ def gerar_analise_ia():
         data_fim = request.form['data_fim']
         tipo_analise = request.form['tipo_analise']
         equipe_id = request.form.get('equipe_id')
+        ocultar_posicoes = request.form.get('ocultar_posicoes') == '1'
         
         # Busca dados
         registros = get_registros_por_periodo(data_inicio, data_fim, equipe_id)
@@ -431,7 +432,7 @@ def gerar_analise_ia():
             })
         
         # Prepara dados para análise
-        analise_html = gerar_analise_com_ia(registros, equipes, tipo_analise, data_inicio, data_fim)
+        analise_html = gerar_analise_com_ia(registros, equipes, tipo_analise, data_inicio, data_fim, ocultar_posicoes)
         
         return jsonify({
             'success': True,
@@ -445,7 +446,7 @@ def gerar_analise_ia():
             'error': str(e)
         })
 
-def gerar_analise_com_ia(registros, equipes, tipo_analise, data_inicio, data_fim):
+def gerar_analise_com_ia(registros, equipes, tipo_analise, data_inicio, data_fim, ocultar_posicoes=False):
     """Gera análise usando IA gratuita (Groq API)"""
     
     # Agrupa dados por equipe
@@ -482,16 +483,17 @@ def gerar_analise_com_ia(registros, equipes, tipo_analise, data_inicio, data_fim
         dados['registros_count'] += 1
     
     # Gera análise sem IA externa (local)
-    html = gerar_analise_local(dados_por_equipe, tipo_analise, data_inicio, data_fim)
+    html = gerar_analise_local(dados_por_equipe, tipo_analise, data_inicio, data_fim, ocultar_posicoes)
     
     return html
 
-def gerar_analise_local(dados_por_equipe, tipo_analise, data_inicio, data_fim):
+def gerar_analise_local(dados_por_equipe, tipo_analise, data_inicio, data_fim, ocultar_posicoes=False):
     """Gera análise inteligente local (sem API externa)"""
     
     html = f"""
     <div class="alert alert-info">
         <i class="fas fa-calendar"></i> Período: <strong>{data_inicio}</strong> até <strong>{data_fim}</strong>
+        {('<div class="mt-2"><i class="fas fa-eye-slash"></i> <strong>Modo Surpresa Ativado</strong> - Posições ocultas</div>' if ocultar_posicoes else '')}
     </div>
     """
     
@@ -502,6 +504,33 @@ def gerar_analise_local(dados_por_equipe, tipo_analise, data_inicio, data_fim):
         # Calcula ranking
         ranking_list = sorted(dados_por_equipe.items(), key=lambda x: x[1]['total_pontos'], reverse=True)
         total_equipes = len(ranking_list)
+        
+        # Iniciar carousel APENAS se modo surpresa estiver ativo E houver mais de uma equipe
+        usar_carousel = ocultar_posicoes and total_equipes > 1
+        
+        # Se modo surpresa, embaralhar ordem (aleatória)
+        if usar_carousel:
+            import random
+            ranking_list = list(ranking_list)
+            random.shuffle(ranking_list)
+        
+        if usar_carousel:
+            html += '''
+            <div class="alert alert-success">
+                <i class="fas fa-info-circle"></i> <strong>Modo Apresentação:</strong> Use as <strong>setas abaixo</strong> ou <strong>arraste</strong> para navegar entre as equipes. 
+                <span class="badge bg-primary">{} equipes</span>
+            </div>
+            <div style="position: relative;">
+            <div id="carouselAnalise" class="carousel slide" data-bs-ride="false">
+                <div class="carousel-indicators">
+            '''.format(total_equipes)
+            
+            # Indicadores
+            for idx in range(total_equipes):
+                active = 'active' if idx == 0 else ''
+                html += f'<button type="button" data-bs-target="#carouselAnalise" data-bs-slide-to="{idx}" class="{active}" aria-current="{"true" if idx == 0 else "false"}"></button>'
+            
+            html += '</div><div class="carousel-inner">'
         
         for idx, (equipe_id, dados) in enumerate(ranking_list, 1):
             pontos_fortes = []
@@ -514,16 +543,23 @@ def gerar_analise_local(dados_por_equipe, tipo_analise, data_inicio, data_fim):
             divisao = "A" if posicao <= 5 else "B"
             medal = '🥇' if posicao == 1 else ('🥈' if posicao == 2 else ('🥉' if posicao == 3 else ''))
             
-            # Análise de posição
-            if posicao == 1:
-                explicacao_posicao = f"🏆 <strong>Líder Absoluto!</strong> A equipe {dados['nome']} conquistou o 1º lugar com <strong>{dados['total_pontos']} pontos</strong>, demonstrando excelência em todas as áreas."
-            elif posicao <= 3:
-                explicacao_posicao = f"{medal} <strong>Pódio Garantido!</strong> A equipe está em <strong>{posicao}º lugar</strong> na Divisão A com <strong>{dados['total_pontos']} pontos</strong>, mostrando desempenho excepcional."
-            elif posicao <= 5:
-                explicacao_posicao = f"⭐ <strong>Divisão A!</strong> A equipe está em <strong>{posicao}º lugar</strong> entre as top 5, com <strong>{dados['total_pontos']} pontos</strong>. Continue assim para manter a posição!"
-            else:
+            # Calcular diferença para top 5 (sempre, para uso posterior)
+            diff_para_top5 = 0
+            if posicao > 5 and len(ranking_list) >= 5:
                 diff_para_top5 = ranking_list[4][1]['total_pontos'] - dados['total_pontos']
-                explicacao_posicao = f"🎯 <strong>Divisão B</strong> - Posição <strong>{posicao}º</strong> com <strong>{dados['total_pontos']} pontos</strong>. Faltam apenas <strong>{diff_para_top5} pontos</strong> para alcançar a Divisão A!"
+            
+            # Análise de posição (oculta se modo surpresa ativado)
+            if ocultar_posicoes:
+                explicacao_posicao = f"🎯 <strong>Análise de Desempenho:</strong> Veja abaixo os pontos fortes, áreas de atenção e recomendações estratégicas para a equipe {dados['nome']}."
+            else:
+                if posicao == 1:
+                    explicacao_posicao = f"🏆 <strong>Líder Absoluto!</strong> A equipe {dados['nome']} conquistou o 1º lugar com <strong>{dados['total_pontos']} pontos</strong>, demonstrando excelência em todas as áreas."
+                elif posicao <= 3:
+                    explicacao_posicao = f"{medal} <strong>Pódio Garantido!</strong> A equipe está em <strong>{posicao}º lugar</strong> na Divisão A com <strong>{dados['total_pontos']} pontos</strong>, mostrando desempenho excepcional."
+                elif posicao <= 5:
+                    explicacao_posicao = f"⭐ <strong>Divisão A!</strong> A equipe está em <strong>{posicao}º lugar</strong> entre as top 5, com <strong>{dados['total_pontos']} pontos</strong>. Continue assim para manter a posição!"
+                else:
+                    explicacao_posicao = f"🎯 <strong>Divisão B</strong> - Posição <strong>{posicao}º</strong> com <strong>{dados['total_pontos']} pontos</strong>. Faltam apenas <strong>{diff_para_top5} pontos</strong> para alcançar a Divisão A!"
             
             # Detalhamento da pontuação
             if dados['pessoas_novas'] > 0:
@@ -594,11 +630,12 @@ def gerar_analise_local(dados_por_equipe, tipo_analise, data_inicio, data_fim):
                 areas_atencao.append(f"⚠️ <strong>Parceiro de Deus Precisa Atenção:</strong> R$ {dados['arrecadacao']:.2f} - ensinar sobre contribuição")
                 recomendacoes.append("💡 Workshop sobre benefícios de ser Parceiro de Deus e impacto do dízimo")
             
-            # Recomendações específicas por posição
-            if posicao == 1:
-                recomendacoes.append("🏆 Manter o ritmo e servir de exemplo para outras equipes")
-            elif posicao > 5:
-                recomendacoes.append(f"🎯 Foco total nos próximos {diff_para_top5} pontos para alcançar Divisão A")
+            # Recomendações específicas por posição (só se não for modo surpresa)
+            if not ocultar_posicoes:
+                if posicao == 1:
+                    recomendacoes.append("🏆 Manter o ritmo e servir de exemplo para outras equipes")
+                elif posicao > 5 and diff_para_top5 > 0:
+                    recomendacoes.append(f"🎯 Foco total nos próximos {diff_para_top5} pontos para alcançar Divisão A")
             
             if not pontos_fortes:
                 pontos_fortes.append("🎯 Equipe em fase de desenvolvimento - todo esforço é valioso!")
@@ -612,17 +649,28 @@ def gerar_analise_local(dados_por_equipe, tipo_analise, data_inicio, data_fim):
             if dados.get('logo_url'):
                 logo_html = f'<img src="{dados["logo_url"]}" alt="{dados["nome"]}" style="width: 40px; height: 40px; object-fit: contain; margin-right: 10px; border-radius: 8px; background: white; padding: 2px;">'
             
+            # Definir cor do card (neutra se modo surpresa)
+            if ocultar_posicoes:
+                card_bg = 'bg-primary'
+                card_text = 'text-white'
+            else:
+                card_bg = 'bg-warning' if posicao <= 3 else ('bg-success' if posicao <= 5 else 'bg-light')
+                card_text = 'text-white' if posicao <= 5 else 'text-dark'
+            
+            # Wrapper do carousel APENAS se modo surpresa ativo
+            carousel_item_start = f'<div class="carousel-item {"active" if idx == 1 else ""}">' if usar_carousel else ''
+            carousel_item_end = '</div>' if usar_carousel else ''
+            
             html += f"""
-            <div class="card mb-4 border-{'' if posicao <= 5 else 'secondary'}">
-                <div class="card-header {'bg-warning' if posicao <= 3 else ('bg-success' if posicao <= 5 else 'bg-light')} text-{'white' if posicao <= 5 else 'dark'}">
-                    <h5 class="mb-0 d-flex align-items-center justify-content-between">
+            {carousel_item_start}
+            <div class="card mb-4 border-{'' if posicao <= 5 and not ocultar_posicoes else 'secondary'}">
+                <div class="card-header {card_bg} {card_text}">
+                    <h5 class="mb-0 d-flex align-items-center {'justify-content-center' if ocultar_posicoes else 'justify-content-between'}">
                         <span class="d-flex align-items-center">
                             {logo_html}
-                            {medal} {dados['nome']}
+                            {'' if ocultar_posicoes else medal} {dados['nome']}
                         </span>
-                        <span class="badge {'bg-light text-dark' if posicao <= 5 else 'bg-success'}">
-                            Divisão {divisao} - {dados['total_pontos']} pts
-                        </span>
+                        {'' if ocultar_posicoes else f'<span class="badge {"bg-light text-dark" if posicao <= 5 else "bg-success"}">Divisão {divisao} - {dados["total_pontos"]} pts</span>'}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -639,9 +687,11 @@ def gerar_analise_local(dados_por_equipe, tipo_analise, data_inicio, data_fim):
                             <ul class="list-unstyled">
                                 {''.join([f'<li class="mb-2">{d}</li>' for d in detalhes_pontuacao])}
                             </ul>
+                            {'' if ocultar_posicoes else f'''
                             <div class="alert alert-secondary mt-2">
                                 <strong><i class="fas fa-equals"></i> Total:</strong> {dados['total_pontos']} pontos acumulados
                             </div>
+                            '''}
                         </div>
                     </div>
                     
@@ -672,10 +722,73 @@ def gerar_analise_local(dados_por_equipe, tipo_analise, data_inicio, data_fim):
                     </ul>
                 </div>
             </div>
+            {carousel_item_end}
             """
+        
+        # Fechar carousel APENAS se modo surpresa estava ativo
+        if usar_carousel:
+            import json
+            from html import escape as html_escape
+            # Pegar as 3 primeiras equipes do ranking original (antes de embaralhar)
+            ranking_original = sorted(dados_por_equipe.items(), key=lambda x: x[1]['total_pontos'], reverse=True)
+            
+            primeiro = ranking_original[0][1] if len(ranking_original) > 0 else None
+            segundo = ranking_original[1][1] if len(ranking_original) > 1 else None
+            terceiro = ranking_original[2][1] if len(ranking_original) > 2 else None
+            
+            # Preparar dados JSON seguros com escape HTML
+            primeiro_json = html_escape(json.dumps({"nome": primeiro["nome"], "logo": primeiro.get("logo_url", ""), "pontos": primeiro["total_pontos"]})) if primeiro else html_escape('{}')
+            segundo_json = html_escape(json.dumps({"nome": segundo["nome"], "logo": segundo.get("logo_url", ""), "pontos": segundo["total_pontos"]})) if segundo else html_escape('{}')
+            terceiro_json = html_escape(json.dumps({"nome": terceiro["nome"], "logo": terceiro.get("logo_url", ""), "pontos": terceiro["total_pontos"]})) if terceiro else html_escape('{}')
+            
+            html += '''
+            </div>
+            </div>
+            <!-- Controles fora do carousel -->
+            <div class="d-flex justify-content-center gap-3 mt-4 mb-4">
+                <button class="btn btn-primary btn-lg" type="button" data-bs-target="#carouselAnalise" data-bs-slide="prev">
+                    <i class="fas fa-chevron-left"></i> Anterior
+                </button>
+                <button class="btn btn-primary btn-lg" type="button" data-bs-target="#carouselAnalise" data-bs-slide="next">
+                    Próximo <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+            
+            <!-- Botões de Revelação do Pódio -->
+            <div class="mt-5 mb-5">
+                <h4 class="text-center mb-4">
+                    <i class="fas fa-trophy text-warning"></i> Revelação do Pódio
+                </h4>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <button class="btn btn-warning btn-lg w-100 py-4 btn-revelar" data-posicao="3" data-equipe="''' + terceiro_json + '''" style="font-size: 1.2rem;">
+                            <i class="fas fa-medal" style="font-size: 2rem;"></i><br>
+                            <strong>Revelar 3º Lugar</strong>
+                            <br><small>🥉 Bronze</small>
+                        </button>
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-secondary btn-lg w-100 py-4 btn-revelar" data-posicao="2" data-equipe="''' + segundo_json + '''" style="font-size: 1.2rem;">
+                            <i class="fas fa-medal" style="font-size: 2rem;"></i><br>
+                            <strong>Revelar 2º Lugar</strong>
+                            <br><small>🥈 Prata</small>
+                        </button>
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-success btn-lg w-100 py-4 btn-revelar" data-posicao="1" data-equipe="''' + primeiro_json + '''" style="font-size: 1.2rem;">
+                            <i class="fas fa-crown" style="font-size: 2rem;"></i><br>
+                            <strong>Revelar 1º Lugar</strong>
+                            <br><small>🥇 Ouro - CAMPEÃO</small>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            </div>
+            '''
     
-    # Análise Comparativa
-    if tipo_analise in ['completa', 'comparativa']:
+    # Análise Comparativa (oculta se modo surpresa ativado)
+    if tipo_analise in ['completa', 'comparativa'] and not ocultar_posicoes:
         html += '<h4 class="mt-4"><i class="fas fa-balance-scale text-info"></i> Análise Comparativa</h4>'
         
         # Ranking
