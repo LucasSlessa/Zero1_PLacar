@@ -189,4 +189,188 @@ Para dúvidas ou sugestões sobre o sistema, entre em contato com a equipe de de
 ---
 
 **Desenvolvido com ❤️ para a comunidade da igreja**
-# Zero1_PLacar
+# 🏆 ZERO 1 - Sistema de Placar Igreja
+
+[![Python](https://img.shields.io/badge/Python-3.12-blue.svg)](https://www.python.org/)
+[![Flask](https://img.shields.io/badge/Flask-3.0-green.svg)](https://flask.palletsprojects.com/)
+[![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-success.svg)](https://supabase.com/)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+Sistema completo de gamificação para acompanhamento de atividades de equipes de igreja com divisões automáticas, relatórios e gestão de registros.
+
+## ✨ Funcionalidades
+
+- 🎯 **Divisões Automáticas** - Top 5 equipes na Divisão A
+- 📈 **Sistema de Pontuação Unificado** - Todos os itens valem 10 pontos
+- 📋 **Registro por Período** - Data inicial/final ao invés de semanas
+- 📊 **Relatórios Detalhados** - Análise completa de desempenho
+- ✏️ **Edição de Registros** - Edite e exclua registros facilmente
+- 👀 **Visualização Flexível** - Com ou sem divisões
+- 📱 **Design Responsivo** - Interface verde luxuosa
+
+## 🎯 Sistema de Pontuação
+
+Todos os itens pontuam **10 pontos cada**:
+
+- 👥 **Pessoas Novas** (Geral)
+- ⚪ **Células Realizadas**
+- ⭐ **Células Elite**
+- 🗓️ **Pessoas Terça** + Novas
+- 🎯 **Pessoas Arena** + Novas
+- ⛪ **Pessoas Domingo** + Novas
+- 💰 **Arrecação Parceiro de Deus** (10 pts/real)
+
+## 🚀 Como Usar
+
+### **Opção 1: Hospedagem Gratuita (Recomendado)**
+
+Veja o guia completo em [HOSPEDAGEM_GRATUITA.md](HOSPEDAGEM_GRATUITA.md)
+
+**Deploy rápido no Render.com:**
+1. Acesse [render.com](https://render.com)
+2. Crie conta gratuita
+3. "New +" → "Web Service"
+4. Conecte este repositório
+5. Configure variáveis de ambiente
+6. Deploy! 🎉
+
+### **Opção 2: Execução Local**
+
+```bash
+# Clone o repositório
+git clone https://github.com/LucasSlessa/Zero1_PLacar.git
+cd Zero1_PLacar
+
+# Crie ambiente virtual
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# ou
+venv\Scripts\activate  # Windows
+
+# Instale dependências
+pip install -r requirements.txt
+
+# Configure variáveis de ambiente
+cp .env.example .env
+# Edite .env com suas credenciais Supabase
+
+# Execute
+python app_supabase.py
+
+# Acesse
+http://localhost:5004
+```
+
+## 🛠️ Configuração
+
+### **1. Supabase**
+
+Crie um projeto gratuito em [supabase.com](https://supabase.com)
+
+Execute os SQLs em [SUPABASE_SETUP.md](SUPABASE_SETUP.md)
+
+### **2. Variáveis de Ambiente**
+
+Crie arquivo `.env`:
+
+```env
+SUPABASE_URL=https://seu-projeto.supabase.co
+SUPABASE_KEY=sua_chave_anon
+```
+
+## 📚 Documentação
+
+- 📖 [Setup Supabase](SUPABASE_SETUP.md)
+- 🔄 [Atualizações](SUPABASE_UPDATE.md)
+- 🔄 [Novas Células](ATUALIZACAO_CELULAS.md)
+- ☁️ [Hospedagem Gratuita](HOSPEDAGEM_GRATUITA.md)
+
+## 📦 Estrutura do Projeto
+
+```
+Zero1_PLacar/
+├── app_supabase.py          # Aplicação Flask principal
+├── templates/               # Templates HTML
+│   ├── base.html
+│   ├── placar.html
+│   ├── registrar_atividade.html
+│   ├── historico.html
+│   ├── editar_registro.html
+│   └── relatorios.html
+├── static/                  # Arquivos estáticos
+│   ├── css/
+│   └── js/
+├── requirements.txt         # Dependências
+├── render.yaml              # Config Render
+├── .env.example             # Exemplo de env
+└── README.md                # Este arquivo
+```
+
+## 💻 Tecnologias
+
+- **Backend**: Python 3.12 + Flask 3.0
+- **Banco**: Supabase (PostgreSQL)
+- **Frontend**: HTML5 + CSS3 + JavaScript
+- **Deploy**: Render.com
+- **UI**: Bootstrap 5 + Font Awesome
+
+## ✨ Screenshots
+
+### Placar com Divisões
+![Placar](https://via.placeholder.com/800x400?text=Placar+com+Divisoes)
+
+### Placar Unificado
+![Placar Unificado](https://via.placeholder.com/800x400?text=Placar+Sem+Divisoes)
+
+### Registrar Atividade
+![Registro](https://via.placeholder.com/800x400?text=Registrar+Atividade)
+
+## 🔧 Desenvolvimento
+
+```bash
+# Instalar em modo desenvolvimento
+pip install -r requirements.txt
+
+# Executar com debug
+export FLASK_ENV=development
+python app_supabase.py
+```
+
+## 🤝 Contribuindo
+
+1. Fork o projeto
+2. Crie uma branch (`git checkout -b feature/nova-funcionalidade`)
+3. Commit suas mudanças (`git commit -m 'Adiciona nova funcionalidade'`)
+4. Push para a branch (`git push origin feature/nova-funcionalidade`)
+5. Abra um Pull Request
+
+## 📝 Changelog
+
+### v1.0.0 (2025-09-30)
+- ✅ Sistema completo de placar
+- ✅ Divisões automáticas
+- ✅ Sistema de pontuação unificado (10 pontos)
+- ✅ Edição e exclusão de registros
+- ✅ Visualização com/sem divisões
+- ✅ Campos de células (planejadas/realizadas/elite)
+- ✅ Interface verde luxuosa
+- ✅ Pronto para produção
+
+## 💬 Suporte
+
+Para suporte, abra uma [issue](https://github.com/LucasSlessa/Zero1_PLacar/issues) ou contate o desenvolvedor.
+
+## 📄 Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+
+## 🌟 Autor
+
+**Lucas Slessa**
+- GitHub: [@LucasSlessa](https://github.com/LucasSlessa)
+
+---
+
+**Feito com ❤️ para a comunidade!**
+
+🚀 [Deploy no Render](https://render.com) | 📘 [Documentação](HOSPEDAGEM_GRATUITA.md) | ⭐ [Star no GitHub](https://github.com/LucasSlessa/Zero1_PLacar)

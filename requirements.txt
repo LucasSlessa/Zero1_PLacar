@@ -1,5 +1,22 @@
-Flask==2.3.3
-Werkzeug==2.3.7
-supabase==2.0.2
-postgrest==0.13.0
+# Flask e dependências web
+Flask==3.0.0
+Werkzeug==3.0.1
+gunicorn==21.2.0
+
+# Supabase
+supabase==2.3.0
+postgrest-py==0.13.0
+storage3==0.7.0
+supafunc==0.3.3
+
+# Utilities
 python-dotenv==1.0.0
+requests==2.31.0
+
+# Core dependencies
+certifi==2023.11.17
+click==8.1.6
+Jinja2==3.1.2
+MarkupSafe==2.1.5
+idna==3.6
+urllib3==2.0.7

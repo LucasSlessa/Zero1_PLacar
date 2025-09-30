@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: zero1-placar
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app_supabase:app --bind 0.0.0.0:$PORT
+    healthCheckPath: /status
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: PYTHON_VERSION
+        value: 3.12.0
