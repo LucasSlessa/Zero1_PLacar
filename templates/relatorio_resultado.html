@@ -25,7 +25,11 @@
         <div class="card text-center">
             <div class="card-body">
                 <h3 class="text-success">
-                    {{ registros|sum(attribute='pontuacao') }}
+                    {% set total_pontos = namespace(value=0) %}
+                    {% for r in registros %}
+                        {% set total_pontos.value = total_pontos.value + (r['pontuacao'] or 0) %}
+                    {% endfor %}
+                    {{ total_pontos.value }}
                 </h3>
                 <p class="text-muted mb-0">Pontos Totais</p>
             </div>
@@ -35,7 +39,11 @@
         <div class="card text-center">
             <div class="card-body">
                 <h3 class="text-info">
-                    {{ registros|sum(attribute='qtd_pessoas_novas') }}
+                    {% set total_novas = namespace(value=0) %}
+                    {% for r in registros %}
+                        {% set total_novas.value = total_novas.value + (r['qtd_pessoas_novas'] or 0) %}
+                    {% endfor %}
+                    {{ total_novas.value }}
                 </h3>
                 <p class="text-muted mb-0">Pessoas Novas</p>
             </div>
@@ -45,7 +53,11 @@
         <div class="card text-center">
             <div class="card-body">
                 <h3 class="text-warning">
-                    R$ {{ "%.2f"|format(registros|sum(attribute='valor_arrecadacao_parceiro')) }}
+                    {% set total_arrec = namespace(value=0) %}
+                    {% for r in registros %}
+                        {% set total_arrec.value = total_arrec.value + (r['valor_arrecadacao_parceiro'] or 0) %}
+                    {% endfor %}
+                    R$ {{ "%.2f"|format(total_arrec.value) }}
                 </h3>
                 <p class="text-muted mb-0">Arrecadação</p>
             </div>
@@ -80,51 +92,60 @@
                             <tbody>
                                 {% for registro in registros %}
                                 <tr>
-                                    <td><strong>{{ registro.equipe.nome }}</strong></td>
+                                    <td><strong>{{ registro['equipes']['nome'] if registro.get('equipes') else 'Equipe' }}</strong></td>
                                     <td>
                                         <small>
-                                            {{ registro.data_inicio.strftime('%d/%m') }} - 
-                                            {{ registro.data_fim.strftime('%d/%m/%Y') }}
+                                            {% if registro['data_inicio'] %}
+                                                {{ registro['data_inicio'][:10] if registro['data_inicio'] is string else registro['data_inicio'].strftime('%d/%m') }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                            - 
+                                            {% if registro['data_fim'] %}
+                                                {{ registro['data_fim'] if registro['data_fim'] is string else registro['data_fim'].strftime('%d/%m/%Y') }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
                                         </small>
                                     </td>
                                     <td>
-                                        <span class="badge bg-primary">{{ registro.qtd_pessoas }}</span>
+                                        <span class="badge bg-primary">{{ registro['qtd_pessoas'] or 0 }}</span>
                                     </td>
                                     <td>
-                                        <span class="badge bg-success">{{ registro.qtd_pessoas_novas }}</span>
+                                        <span class="badge bg-success">{{ registro['qtd_pessoas_novas'] or 0 }}</span>
                                     </td>
                                     <td>
-                                        <span class="badge bg-warning">{{ registro.qtd_celulas_elite }}</span>
+                                        <span class="badge bg-warning">{{ registro['qtd_celulas_elite'] or 0 }}</span>
                                     </td>
                                     <td>
                                         <small>
-                                            {{ registro.qtd_pessoas_terca }}
-                                            {% if registro.qtd_pessoas_novas_terca > 0 %}
-                                                <span class="badge bg-info">+{{ registro.qtd_pessoas_novas_terca }}</span>
+                                            {{ registro['qtd_pessoas_terca'] or 0 }}
+                                            {% if registro.get('qtd_pessoas_novas_terca') and registro['qtd_pessoas_novas_terca'] > 0 %}
+                                                <span class="badge bg-info">+{{ registro['qtd_pessoas_novas_terca'] }}</span>
                                             {% endif %}
                                         </small>
                                     </td>
                                     <td>
                                         <small>
-                                            {{ registro.qtd_pessoas_arena }}
-                                            {% if registro.qtd_pessoas_novas_arena > 0 %}
-                                                <span class="badge bg-danger">+{{ registro.qtd_pessoas_novas_arena }}</span>
+                                            {{ registro['qtd_pessoas_arena'] or 0 }}
+                                            {% if registro.get('qtd_pessoas_novas_arena') and registro['qtd_pessoas_novas_arena'] > 0 %}
+                                                <span class="badge bg-danger">+{{ registro['qtd_pessoas_novas_arena'] }}</span>
                                             {% endif %}
                                         </small>
                                     </td>
                                     <td>
                                         <small>
-                                            {{ registro.qtd_pessoas_domingo }}
-                                            {% if registro.qtd_pessoas_novas_domingo > 0 %}
-                                                <span class="badge bg-secondary">+{{ registro.qtd_pessoas_novas_domingo }}</span>
+                                            {{ registro['qtd_pessoas_domingo'] or 0 }}
+                                            {% if registro.get('qtd_pessoas_novas_domingo') and registro['qtd_pessoas_novas_domingo'] > 0 %}
+                                                <span class="badge bg-secondary">+{{ registro['qtd_pessoas_novas_domingo'] }}</span>
                                             {% endif %}
                                         </small>
                                     </td>
                                     <td>
-                                        <small>R$ {{ "%.2f"|format(registro.valor_arrecadacao_parceiro) }}</small>
+                                        <small>R$ {{ "%.2f"|format(registro['valor_arrecadacao_parceiro'] or 0) }}</small>
                                     </td>
                                     <td>
-                                        <strong class="text-success">{{ registro.pontuacao }}</strong>
+                                        <strong class="text-success">{{ registro['pontuacao'] or 0 }}</strong>
                                     </td>
                                 </tr>
                                 {% endfor %}
