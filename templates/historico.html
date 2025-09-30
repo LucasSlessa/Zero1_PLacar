@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block title %}Histórico - {{ equipe.nome }} - ZERO 1{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="mb-0">
+                <i class="fas fa-history text-info"></i> 
+                Histórico - {{ equipe.nome }}
+                <span class="badge bg-{{ 'primary' if equipe.divisao == 'A' else 'info' }} ms-2">
+                    Divisão {{ equipe.divisao }}
+                </span>
+            </h1>
+            <a href="{{ url_for('placar') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <h2 class="text-success">{{ equipe.pontuacao_total }}</h2>
+                <p class="text-muted mb-0">Pontos Totais</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <h2 class="text-info">{{ registros|length }}</h2>
+                <p class="text-muted mb-0">Registros</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <h2 class="text-warning">
+                    {% if registros %}
+                        {{ (equipe.pontuacao_total / registros|length)|round|int }}
+                    {% else %}
+                        0
+                    {% endif %}
+                </h2>
+                <p class="text-muted mb-0">Média por Semana</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-list"></i> Histórico de Atividades</h5>
+            </div>
+            <div class="card-body">
+                {% if registros %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Período</th>
+                                    <th>P. Novas</th>
+                                    <th>Células</th>
+                                    <th>Terça</th>
+                                    <th>Arena</th>
+                                    <th>Domingo</th>
+                                    <th>Parceiro</th>
+                                    <th>Pontos</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for registro in registros %}
+                                <tr>
+                                    <td>
+                                        <small class="text-muted">
+                                            {{ registro.data_inicio if registro.data_inicio is string else registro.data_inicio.strftime('%d/%m') if registro.data_inicio else '-' }} a 
+                                            {{ registro.data_fim if registro.data_fim is string else registro.data_fim.strftime('%d/%m') if registro.data_fim else '-' }}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ registro.qtd_pessoas_novas or 0 }}</span>
+                                    </td>
+                                    <td>
+                                        <small>
+                                            {% if registro.qtd_celulas_realizadas or registro.qtd_celulas_elite %}
+                                                R: {{ registro.qtd_celulas_realizadas or 0 }} | 
+                                                E: {{ registro.qtd_celulas_elite or 0 }}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <small>
+                                            {% if registro.qtd_pessoas_terca or registro.qtd_pessoas_novas_terca %}
+                                                {{ registro.qtd_pessoas_terca or 0 }} | N: {{ registro.qtd_pessoas_novas_terca or 0 }}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <small>
+                                            {% if registro.qtd_pessoas_arena or registro.qtd_pessoas_novas_arena %}
+                                                {{ registro.qtd_pessoas_arena or 0 }} | N: {{ registro.qtd_pessoas_novas_arena or 0 }}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <small>
+                                            {% if registro.qtd_pessoas_domingo or registro.qtd_pessoas_novas_domingo %}
+                                                {{ registro.qtd_pessoas_domingo or 0 }} | N: {{ registro.qtd_pessoas_novas_domingo or 0 }}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <small>
+                                            {% if registro.valor_arrecadacao_parceiro %}
+                                                R$ {{ "%0.2f"|format(registro.valor_arrecadacao_parceiro) }}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success fs-6">{{ registro.pontuacao }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ url_for('editar_registro_route', registro_id=registro.id) }}" 
+                                               class="btn btn-sm btn-outline-warning" title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                    onclick="confirmarExclusao({{ registro.id }}, '{{ equipe.id }}')" title="Excluir">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center p-4">
+                        <i class="fas fa-clipboard fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Nenhuma atividade registrada</h5>
+                        <p class="text-muted">Esta equipe ainda não possui registros de atividades.</p>
+                        <a href="{{ url_for('registrar_atividade') }}" class="btn btn-success">
+                            <i class="fas fa-plus-circle"></i> Registrar Primeira Atividade
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12 text-center">
+        <a href="{{ url_for('registrar_atividade') }}" class="btn btn-success btn-lg">
+            <i class="fas fa-plus-circle"></i> Nova Atividade
+        </a>
+    </div>
+</div>
+
+<script>
+function confirmarExclusao(registroId, equipeId) {
+    if (confirm('Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.')) {
+        // Criar formulário para POST
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/excluir_registro/${registroId}`;
+        
+        // Adicionar campo de equipe_id para redirecionamento
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'equipe_id';
+        input.value = equipeId;
+        form.appendChild(input);
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}Resultado do Relatório - ZERO 1{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-chart-line text-info"></i> 
+            Relatório - {{ data_inicio.strftime('%d/%m/%Y') }} a {{ data_fim.strftime('%d/%m/%Y') }}
+        </h1>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="text-primary">{{ registros|length }}</h3>
+                <p class="text-muted mb-0">Registros</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="text-success">
+                    {{ registros|sum(attribute='pontuacao') }}
+                </h3>
+                <p class="text-muted mb-0">Pontos Totais</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="text-info">
+                    {{ registros|sum(attribute='qtd_pessoas_novas') }}
+                </h3>
+                <p class="text-muted mb-0">Pessoas Novas</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="text-warning">
+                    R$ {{ "%.2f"|format(registros|sum(attribute='valor_arrecadacao_parceiro')) }}
+                </h3>
+                <p class="text-muted mb-0">Arrecadação</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-list"></i> Detalhes dos Registros</h5>
+            </div>
+            <div class="card-body">
+                {% if registros %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Equipe</th>
+                                    <th>Período</th>
+                                    <th>Pessoas</th>
+                                    <th>P. Novas</th>
+                                    <th>Células Elite</th>
+                                    <th>Terça</th>
+                                    <th>Arena</th>
+                                    <th>Domingo</th>
+                                    <th>Arrecadação</th>
+                                    <th>Pontos</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for registro in registros %}
+                                <tr>
+                                    <td><strong>{{ registro.equipe.nome }}</strong></td>
+                                    <td>
+                                        <small>
+                                            {{ registro.data_inicio.strftime('%d/%m') }} - 
+                                            {{ registro.data_fim.strftime('%d/%m/%Y') }}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ registro.qtd_pessoas }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success">{{ registro.qtd_pessoas_novas }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-warning">{{ registro.qtd_celulas_elite }}</span>
+                                    </td>
+                                    <td>
+                                        <small>
+                                            {{ registro.qtd_pessoas_terca }}
+                                            {% if registro.qtd_pessoas_novas_terca > 0 %}
+                                                <span class="badge bg-info">+{{ registro.qtd_pessoas_novas_terca }}</span>
+                                            {% endif %}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <small>
+                                            {{ registro.qtd_pessoas_arena }}
+                                            {% if registro.qtd_pessoas_novas_arena > 0 %}
+                                                <span class="badge bg-danger">+{{ registro.qtd_pessoas_novas_arena }}</span>
+                                            {% endif %}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <small>
+                                            {{ registro.qtd_pessoas_domingo }}
+                                            {% if registro.qtd_pessoas_novas_domingo > 0 %}
+                                                <span class="badge bg-secondary">+{{ registro.qtd_pessoas_novas_domingo }}</span>
+                                            {% endif %}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <small>R$ {{ "%.2f"|format(registro.valor_arrecadacao_parceiro) }}</small>
+                                    </td>
+                                    <td>
+                                        <strong class="text-success">{{ registro.pontuacao }}</strong>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center p-4">
+                        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Nenhum registro encontrado</h5>
+                        <p class="text-muted">
+                            Não foram encontrados registros para o período e filtros selecionados.
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12 text-center">
+        <a href="{{ url_for('relatorios') }}" class="btn btn-info btn-lg me-3">
+            <i class="fas fa-search"></i> Novo Relatório
+        </a>
+        <a href="{{ url_for('placar') }}" class="btn btn-secondary btn-lg">
+            <i class="fas fa-arrow-left"></i> Voltar ao Placar
+        </a>
+    </div>
+</div>
+{% endblock %}

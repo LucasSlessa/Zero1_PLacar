@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Hero Section Moderno -->
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="hero-section text-center py-5">
+            <div class="hero-content">
+                <h1 class="display-1 fw-bold mb-2">
+                    <i class="fas fa-trophy" style="color: #4caf50;"></i>
+                    ZERO 1
+                </h1>
+                <p class="lead mb-3" style="color: var(--text-secondary);">
+                    Sistema de Placar Inteligente com Divisões Dinâmicas
+                </p>
+                <div class="hero-stats d-flex justify-content-center gap-3 flex-wrap mb-3">
+                    <div class="stat-box">
+                        <div class="stat-number" style="color: #4caf50;">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="stat-label" style="color: var(--text-secondary);">Acompanhamento em Tempo Real</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number" style="color: #66bb6a;">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <div class="stat-label" style="color: var(--text-secondary);">Filtro por Período</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number" style="color: #00c853;">
+                            <i class="fas fa-medal"></i>
+                        </div>
+                        <div class="stat-label" style="color: var(--text-secondary);">Divisões Automáticas</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cards de Ação Modernos -->
+<div class="row g-4 mb-5">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100 text-center action-card">
+            <div class="card-body d-flex flex-column justify-content-between p-4">
+                <div>
+                    <div class="icon-wrapper mb-3" style="background: var(--accent-gradient); border-radius: 15px; width: 60px; height: 60px; margin: 0 auto; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 15px rgba(0, 200, 83, 0.3);">
+                        <i class="fas fa-trophy" style="font-size: 1.8rem; color: white;"></i>
+                    </div>
+                    <h4 class="card-title fw-bold mb-3">Ver Placar</h4>
+                    <p class="card-text" style="color: var(--text-secondary);">Acompanhe a classificação em tempo real das Divisões A e B</p>
+                </div>
+                <a href="{{ url_for('placar') }}" class="btn btn-warning btn-lg w-100 mt-3">
+                    <i class="fas fa-eye me-2"></i> Acessar
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100 text-center action-card">
+            <div class="card-body d-flex flex-column justify-content-between p-4">
+                <div>
+                    <div class="icon-wrapper mb-3" style="background: var(--success-gradient); border-radius: 15px; width: 60px; height: 60px; margin: 0 auto; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);">
+                        <i class="fas fa-plus-circle" style="font-size: 1.8rem; color: white;"></i>
+                    </div>
+                    <h4 class="card-title fw-bold mb-3">Registrar Atividade</h4>
+                    <p class="card-text" style="color: var(--text-secondary);">Registre atividades por período com datas de início e fim</p>
+                </div>
+                <a href="{{ url_for('registrar_atividade') }}" class="btn btn-success btn-lg w-100 mt-3">
+                    <i class="fas fa-plus me-2"></i> Registrar
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100 text-center action-card">
+            <div class="card-body d-flex flex-column justify-content-between p-4">
+                <div>
+                    <div class="icon-wrapper mb-3" style="background: var(--primary-gradient); border-radius: 15px; width: 60px; height: 60px; margin: 0 auto; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 15px rgba(45, 122, 79, 0.3);">
+                        <i class="fas fa-chart-bar" style="font-size: 1.8rem; color: white;"></i>
+                    </div>
+                    <h4 class="card-title fw-bold mb-3">Relatórios</h4>
+                    <p class="card-text" style="color: var(--text-secondary);">Visualize dados detalhados e histórico por período</p>
+                </div>
+                <a href="{{ url_for('relatorios') }}" class="btn btn-primary btn-lg w-100 mt-3">
+                    <i class="fas fa-chart-line me-2"></i> Ver Dados
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100 text-center action-card">
+            <div class="card-body d-flex flex-column justify-content-between p-4">
+                <div>
+                    <div class="icon-wrapper mb-3" style="background: var(--secondary-gradient); border-radius: 15px; width: 60px; height: 60px; margin: 0 auto; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 15px rgba(45, 122, 79, 0.3);">
+                        <i class="fas fa-users" style="font-size: 1.8rem; color: white;"></i>
+                    </div>
+                    <h4 class="card-title fw-bold mb-3">Nova Equipe</h4>
+                    <p class="card-text" style="color: var(--text-secondary);">Cadastre uma nova equipe com logo personalizada</p>
+                </div>
+                <a href="{{ url_for('cadastrar_equipe') }}" class="btn btn-info btn-lg w-100 mt-3">
+                    <i class="fas fa-user-plus me-2"></i> Cadastrar
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Seção de Pontuação Modernizada -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header text-center">
+                <h3 class="mb-0"><i class="fas fa-calculator me-2"></i> Sistema de Pontuação</h3>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-3">
+                    <!-- Pessoas Novas Geral -->
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <div class="score-item p-3" style="background: rgba(79, 172, 254, 0.1); border-radius: 16px; border-left: 4px solid #4facfe;">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <i class="fas fa-user-plus" style="font-size: 1.5rem; color: #4facfe;"></i>
+                                    <p class="mb-0 mt-2 fw-semibold" style="font-size: 0.9rem;">Pessoas Novas</p>
+                                </div>
+                                <span class="badge bg-success" style="font-size: 1.1rem;">10</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Células Elite -->
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <div class="score-item p-3" style="background: rgba(254, 225, 64, 0.1); border-radius: 16px; border-left: 4px solid #fee140;">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <i class="fas fa-star" style="font-size: 1.5rem; color: #fee140;"></i>
+                                    <p class="mb-0 mt-2 fw-semibold" style="font-size: 0.9rem;">Células Elite</p>
+                                </div>
+                                <span class="badge bg-warning" style="font-size: 1.1rem;">15</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Pessoas Terça -->
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <div class="score-item p-3" style="background: rgba(103, 126, 234, 0.1); border-radius: 16px; border-left: 4px solid #667eea;">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <i class="fas fa-calendar-day" style="font-size: 1.5rem; color: #667eea;"></i>
+                                    <p class="mb-0 mt-2 fw-semibold" style="font-size: 0.9rem;">Pessoas Terça</p>
+                                </div>
+                                <span class="badge" style="background: var(--primary-gradient); font-size: 1.1rem;">5</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Novas Terça -->
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <div class="score-item p-3" style="background: rgba(103, 126, 234, 0.1); border-radius: 16px; border-left: 4px solid #667eea;">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <i class="fas fa-user-plus" style="font-size: 1.5rem; color: #667eea;"></i>
+                                    <p class="mb-0 mt-2 fw-semibold" style="font-size: 0.9rem;">Novas Terça</p>
+                                </div>
+                                <span class="badge" style="background: var(--primary-gradient); font-size: 1.1rem;">10</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Pessoas Arena -->
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <div class="score-item p-3" style="background: rgba(245, 87, 108, 0.1); border-radius: 16px; border-left: 4px solid #f5576c;">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <i class="fas fa-fire" style="font-size: 1.5rem; color: #f5576c;"></i>
+                                    <p class="mb-0 mt-2 fw-semibold" style="font-size: 0.9rem;">Pessoas Arena</p>
+                                </div>
+                                <span class="badge" style="background: var(--secondary-gradient); font-size: 1.1rem;">8</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Novas Arena -->
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <div class="score-item p-3" style="background: rgba(245, 87, 108, 0.1); border-radius: 16px; border-left: 4px solid #f5576c;">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <i class="fas fa-user-plus" style="font-size: 1.5rem; color: #f5576c;"></i>
+                                    <p class="mb-0 mt-2 fw-semibold" style="font-size: 0.9rem;">Novas Arena</p>
+                                </div>
+                                <span class="badge" style="background: var(--secondary-gradient); font-size: 1.1rem;">15</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Pessoas Domingo -->
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <div class="score-item p-3" style="background: rgba(134, 143, 150, 0.1); border-radius: 16px; border-left: 4px solid #868f96;">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <i class="fas fa-pray" style="font-size: 1.5rem; color: #868f96;"></i>
+                                    <p class="mb-0 mt-2 fw-semibold" style="font-size: 0.9rem;">Pessoas Domingo</p>
+                                </div>
+                                <span class="badge bg-secondary" style="font-size: 1.1rem;">3</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Novas Domingo -->
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <div class="score-item p-3" style="background: rgba(134, 143, 150, 0.1); border-radius: 16px; border-left: 4px solid #868f96;">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <i class="fas fa-user-plus" style="font-size: 1.5rem; color: #868f96;"></i>
+                                    <p class="mb-0 mt-2 fw-semibold" style="font-size: 0.9rem;">Novas Domingo</p>
+                                </div>
+                                <span class="badge bg-secondary" style="font-size: 1.1rem;">8</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Arrecadação -->
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <div class="score-item p-3" style="background: rgba(0, 242, 254, 0.1); border-radius: 16px; border-left: 4px solid #00f2fe;">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <i class="fas fa-dollar-sign" style="font-size: 1.5rem; color: #00f2fe;"></i>
+                                    <p class="mb-0 mt-2 fw-semibold" style="font-size: 0.9rem;">Parceiro de Deus</p>
+                                </div>
+                                <span class="badge bg-success" style="font-size: 1.1rem;">0.1/R$</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

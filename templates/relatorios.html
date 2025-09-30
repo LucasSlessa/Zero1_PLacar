@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Relatórios - ZERO 1{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4"><i class="fas fa-chart-bar text-info"></i> Relatórios</h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card shadow">
+            <div class="card-header bg-info text-white">
+                <h4 class="mb-0"><i class="fas fa-filter"></i> Filtros do Relatório</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('relatorio_periodo') }}">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="data_inicio" class="form-label">
+                                <i class="fas fa-calendar-alt"></i> Data Início
+                            </label>
+                            <input type="date" class="form-control" id="data_inicio" name="data_inicio" required>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="data_fim" class="form-label">
+                                <i class="fas fa-calendar-alt"></i> Data Fim
+                            </label>
+                            <input type="date" class="form-control" id="data_fim" name="data_fim" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label for="equipe_id" class="form-label">
+                                <i class="fas fa-users"></i> Equipe (Opcional)
+                            </label>
+                            <select class="form-select" id="equipe_id" name="equipe_id">
+                                <option value="">Todas as equipes</option>
+                                {% for equipe in equipes %}
+                                    <option value="{{ equipe.id }}">{{ equipe.nome }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">
+                                Deixe em branco para ver todas as equipes
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12 text-center">
+                            <button type="submit" class="btn btn-info btn-lg me-3">
+                                <i class="fas fa-search"></i> Gerar Relatório
+                            </button>
+                            <a href="{{ url_for('placar') }}" class="btn btn-secondary btn-lg">
+                                <i class="fas fa-arrow-left"></i> Voltar ao Placar
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-info-circle"></i> Sobre os Relatórios</h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-2">
+                    <strong>Relatório por Período:</strong> Mostra todas as atividades registradas entre as datas especificadas.
+                </p>
+                <p class="mb-2">
+                    <strong>Filtro por Equipe:</strong> Permite visualizar apenas os dados de uma equipe específica.
+                </p>
+                <p class="mb-0">
+                    <strong>Dados Inclusos:</strong> Pontuação, participantes, pessoas novas, arrecadação e muito mais.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

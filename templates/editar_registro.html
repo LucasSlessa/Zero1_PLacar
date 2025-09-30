@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Registro - ZERO 1{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-edit text-warning"></i> Editar Registro
+            <small class="text-muted">{{ equipe.nome }}</small>
+        </h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-10 mx-auto">
+        <div class="card shadow">
+            <div class="card-header bg-warning text-white">
+                <h4 class="mb-0"><i class="fas fa-clipboard-list"></i> Editar Atividade</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" id="editarForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="data_inicio" class="form-label">
+                                <i class="fas fa-calendar-alt"></i> Data Início
+                            </label>
+                            <input type="date" class="form-control" id="data_inicio" name="data_inicio" 
+                                   value="{{ registro.data_inicio }}" required>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="data_fim" class="form-label">
+                                <i class="fas fa-calendar-alt"></i> Data Fim
+                            </label>
+                            <input type="date" class="form-control" id="data_fim" name="data_fim" 
+                                   value="{{ registro.data_fim }}" required>
+                        </div>
+                    </div>
+
+                    <hr>
+                    <h5 class="mb-3"><i class="fas fa-chart-line"></i> Dados do Período</h5>
+
+                    <!-- Quantidade de Pessoas -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="qtd_pessoas" class="form-label">
+                                <i class="fas fa-users text-primary"></i> Quantidade de Pessoas
+                            </label>
+                            <input type="number" class="form-control" id="qtd_pessoas" name="qtd_pessoas" 
+                                   min="0" value="{{ registro.qtd_pessoas or 0 }}" onchange="calcularPontuacao()">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="qtd_pessoas_novas" class="form-label">
+                                <i class="fas fa-user-plus text-success"></i> Quantidade Pessoas Novas
+                                <small class="text-muted">(10 pontos cada)</small>
+                            </label>
+                            <input type="number" class="form-control" id="qtd_pessoas_novas" name="qtd_pessoas_novas" 
+                                   min="0" value="{{ registro.qtd_pessoas_novas or 0 }}" onchange="calcularPontuacao()">
+                        </div>
+                    </div>
+
+                    <!-- Células -->
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="qtd_celulas" class="form-label">
+                                <i class="fas fa-circle-notch text-primary"></i> Quantidade de Células
+                                <small class="text-muted">(planejadas)</small>
+                            </label>
+                            <input type="number" class="form-control" id="qtd_celulas" name="qtd_celulas" 
+                                   min="0" value="{{ registro.qtd_celulas or 0 }}" onchange="calcularPontuacao()">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="qtd_celulas_realizadas" class="form-label">
+                                <i class="fas fa-check-circle text-success"></i> Células Realizadas
+                                <small class="text-muted">(10 pontos cada)</small>
+                            </label>
+                            <input type="number" class="form-control" id="qtd_celulas_realizadas" name="qtd_celulas_realizadas" 
+                                   min="0" value="{{ registro.qtd_celulas_realizadas or 0 }}" onchange="calcularPontuacao()">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="qtd_celulas_elite" class="form-label">
+                                <i class="fas fa-star text-warning"></i> Células Elite
+                                <small class="text-muted">(10 pontos cada)</small>
+                            </label>
+                            <input type="number" class="form-control" id="qtd_celulas_elite" name="qtd_celulas_elite" 
+                                   min="0" value="{{ registro.qtd_celulas_elite or 0 }}" onchange="calcularPontuacao()">
+                        </div>
+                    </div>
+
+                    <!-- Terça-feira -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="qtd_pessoas_terca" class="form-label">
+                                <i class="fas fa-calendar-day text-info"></i> Quantidade Pessoas Terça
+                                <small class="text-muted">(10 pontos cada)</small>
+                            </label>
+                            <input type="number" class="form-control" id="qtd_pessoas_terca" name="qtd_pessoas_terca" 
+                                   min="0" value="{{ registro.qtd_pessoas_terca or 0 }}" onchange="calcularPontuacao()">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="qtd_pessoas_novas_terca" class="form-label">
+                                <i class="fas fa-user-plus text-info"></i> Quantidade Pessoas Novas Terça
+                                <small class="text-muted">(10 pontos cada)</small>
+                            </label>
+                            <input type="number" class="form-control" id="qtd_pessoas_novas_terca" name="qtd_pessoas_novas_terca" 
+                                   min="0" value="{{ registro.qtd_pessoas_novas_terca or 0 }}" onchange="calcularPontuacao()">
+                        </div>
+                    </div>
+
+                    <!-- Arena -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="qtd_pessoas_arena" class="form-label">
+                                <i class="fas fa-fire text-danger"></i> Quantidade Pessoas Arena
+                                <small class="text-muted">(10 pontos cada)</small>
+                            </label>
+                            <input type="number" class="form-control" id="qtd_pessoas_arena" name="qtd_pessoas_arena" 
+                                   min="0" value="{{ registro.qtd_pessoas_arena or 0 }}" onchange="calcularPontuacao()">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="qtd_pessoas_novas_arena" class="form-label">
+                                <i class="fas fa-user-plus text-danger"></i> Quantidade Pessoas Novas Arena
+                                <small class="text-muted">(10 pontos cada)</small>
+                            </label>
+                            <input type="number" class="form-control" id="qtd_pessoas_novas_arena" name="qtd_pessoas_novas_arena" 
+                                   min="0" value="{{ registro.qtd_pessoas_novas_arena or 0 }}" onchange="calcularPontuacao()">
+                        </div>
+                    </div>
+
+                    <!-- Domingo -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="qtd_pessoas_domingo" class="form-label">
+                                <i class="fas fa-pray text-secondary"></i> Quantidade Pessoas Domingo
+                                <small class="text-muted">(10 pontos cada)</small>
+                            </label>
+                            <input type="number" class="form-control" id="qtd_pessoas_domingo" name="qtd_pessoas_domingo" 
+                                   min="0" value="{{ registro.qtd_pessoas_domingo or 0 }}" onchange="calcularPontuacao()">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="qtd_pessoas_novas_domingo" class="form-label">
+                                <i class="fas fa-user-plus text-secondary"></i> Quantidade Pessoas Novas Domingo
+                                <small class="text-muted">(10 pontos cada)</small>
+                            </label>
+                            <input type="number" class="form-control" id="qtd_pessoas_novas_domingo" name="qtd_pessoas_novas_domingo" 
+                                   min="0" value="{{ registro.qtd_pessoas_novas_domingo or 0 }}" onchange="calcularPontuacao()">
+                        </div>
+                    </div>
+
+                    <!-- Parceiro de Deus -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="valor_arrecadacao_parceiro" class="form-label">
+                                <i class="fas fa-dollar-sign text-success"></i> Valor Arrecadação Parceiro de Deus
+                                <small class="text-muted">(10 pontos por real)</small>
+                            </label>
+                            <input type="number" class="form-control" id="valor_arrecadacao_parceiro" name="valor_arrecadacao_parceiro" 
+                                   min="0" step="0.01" value="{{ registro.valor_arrecadacao_parceiro or 0 }}" onchange="calcularPontuacao()">
+                        </div>
+                    </div>
+
+                    <hr>
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <i class="fas fa-calculator"></i> 
+                                <strong>Pontuação Estimada: </strong>
+                                <span id="pontuacao_estimada">{{ registro.pontuacao }}</span> pontos
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12 text-center">
+                            <button type="submit" class="btn btn-warning btn-lg me-3">
+                                <i class="fas fa-save"></i> Salvar Alterações
+                            </button>
+                            <a href="{{ url_for('historico_equipe', equipe_id=equipe.id) }}" class="btn btn-secondary btn-lg">
+                                <i class="fas fa-arrow-left"></i> Cancelar
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function calcularPontuacao() {
+    let pontos = 0;
+    
+    // Pessoas novas (geral)
+    const pessoasNovas = parseInt(document.getElementById('qtd_pessoas_novas').value) || 0;
+    pontos += pessoasNovas * 10;
+    
+    // Células Realizadas
+    const celulasRealizadas = parseInt(document.getElementById('qtd_celulas_realizadas').value) || 0;
+    pontos += celulasRealizadas * 10;
+    
+    // Células Elite
+    const celulasElite = parseInt(document.getElementById('qtd_celulas_elite').value) || 0;
+    pontos += celulasElite * 10;
+    
+    // Terça-feira
+    const pessoasTerca = parseInt(document.getElementById('qtd_pessoas_terca').value) || 0;
+    const pessoasNovasTerca = parseInt(document.getElementById('qtd_pessoas_novas_terca').value) || 0;
+    pontos += pessoasTerca * 10;
+    pontos += pessoasNovasTerca * 10;
+    
+    // Arena
+    const pessoasArena = parseInt(document.getElementById('qtd_pessoas_arena').value) || 0;
+    const pessoasNovasArena = parseInt(document.getElementById('qtd_pessoas_novas_arena').value) || 0;
+    pontos += pessoasArena * 10;
+    pontos += pessoasNovasArena * 10;
+    
+    // Domingo
+    const pessoasDomingo = parseInt(document.getElementById('qtd_pessoas_domingo').value) || 0;
+    const pessoasNovasDomingo = parseInt(document.getElementById('qtd_pessoas_novas_domingo').value) || 0;
+    pontos += pessoasDomingo * 10;
+    pontos += pessoasNovasDomingo * 10;
+    
+    // Parceiro de Deus
+    const valorArrecadacao = parseFloat(document.getElementById('valor_arrecadacao_parceiro').value) || 0;
+    pontos += valorArrecadacao * 10;
+    
+    document.getElementById('pontuacao_estimada').textContent = Math.round(pontos);
+}
+
+// Adicionar listeners para recalcular pontuação
+document.addEventListener('DOMContentLoaded', function() {
+    const inputs = document.querySelectorAll('input[type="number"]');
+    inputs.forEach(input => {
+        input.addEventListener('change', calcularPontuacao);
+        input.addEventListener('input', calcularPontuacao);
+    });
+});
+</script>
+{% endblock %}

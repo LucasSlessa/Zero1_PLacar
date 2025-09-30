@@ -1,0 +1,391 @@
+{% extends "base.html" %}
+
+{% block title %}Placar - Sistema de Placar da Igreja{% endblock %}
+
+{% block content %}
+<!-- Header Compacto com Filtro Inline -->
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center flex-wrap mb-2">
+            <h2 class="mb-0">
+                <i class="fas fa-trophy" style="color: #4caf50;"></i> 
+                {% if periodo.is_periodo %}
+                    Placar do Período
+                    <small class="text-muted" style="font-size: 0.6em;">({{ periodo.data_inicio }} a {{ periodo.data_fim }})</small>
+                {% else %}
+                    Placar Geral
+                {% endif %}
+            </h2>
+            <a href="{{ url_for('cadastrar_equipe') }}" class="btn btn-success">
+                <i class="fas fa-plus-circle me-1"></i> Nova Equipe
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Filtro Compacto -->
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card" style="background: rgba(76, 175, 80, 0.05);">
+            <div class="card-body p-3">
+                <form method="POST" action="{{ url_for('placar_periodo') }}" class="row g-2 align-items-end">
+                    <div class="col-auto">
+                        <label for="data_inicio" class="form-label mb-1" style="font-size: 0.85rem;">Início</label>
+                        <input type="date" class="form-control form-control-sm" id="data_inicio" name="data_inicio" 
+                               value="{{ periodo.data_inicio or '' }}" required>
+                    </div>
+                    <div class="col-auto">
+                        <label for="data_fim" class="form-label mb-1" style="font-size: 0.85rem;">Fim</label>
+                        <input type="date" class="form-control form-control-sm" id="data_fim" name="data_fim" 
+                               value="{{ periodo.data_fim or '' }}" required>
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-sm btn-primary">
+                            <i class="fas fa-search"></i> Filtrar
+                        </button>
+                    </div>
+                    <div class="col-auto">
+                        <a href="{{ url_for('placar') }}" class="btn btn-sm btn-secondary">
+                            <i class="fas fa-list"></i> Ver Geral
+                        </a>
+                    </div>
+                    <div class="col-auto">
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-sm btn-outline-success" onclick="filtrarEsteMes()" title="Este Mês">
+                                <i class="fas fa-calendar-day"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-info" onclick="filtrarMesPassado()" title="Mês Passado">
+                                <i class="fas fa-calendar-minus"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-warning" onclick="filtrarEsteAno()" title="Este Ano">
+                                <i class="fas fa-calendar"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-auto ms-auto">
+                        {% if sem_divisoes %}
+                            <a href="{{ url_for('placar', data_inicio=periodo.data_inicio, data_fim=periodo.data_fim) if periodo.is_periodo else url_for('placar') }}" 
+                               class="btn btn-sm btn-success">
+                                <i class="fas fa-layer-group me-1"></i> Com Divisões
+                            </a>
+                        {% else %}
+                            <a href="{{ url_for('placar', sem_divisoes='1', data_inicio=periodo.data_inicio, data_fim=periodo.data_fim) if periodo.is_periodo else url_for('placar', sem_divisoes='1') }}" 
+                               class="btn btn-sm btn-outline-success">
+                                <i class="fas fa-list me-1"></i> Sem Divisões
+                            </a>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabelas do Placar -->
+{% if sem_divisoes %}
+<!-- Placar Unificado (Sem Divisões) -->
+<div class="row">
+    <div class="col-12 mb-3">
+        <div class="card" style="border: 2px solid #4caf50;">
+            <div class="card-header bg-success text-white py-3">
+                <h4 class="mb-0 d-flex align-items-center">
+                    <i class="fas fa-list me-2" style="font-size: 1.5rem;"></i>
+                    <span>Classificação Geral</span>
+                    <span class="badge bg-light text-dark ms-auto">{{ todas_equipes|length }} equipes</span>
+                </h4>
+            </div>
+            <div class="card-body p-0">
+                {% if todas_equipes %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Posição</th>
+                                    <th>Logo</th>
+                                    <th>Equipe</th>
+                                    <th>Pontos</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for equipe in todas_equipes %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-{{ 'warning' if loop.index == 1 else 'success' if loop.index <= 3 else 'secondary' }} fs-6">
+                                            {{ loop.index }}º
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if equipe.logo_url %}
+                                            <img src="{{ equipe.logo_url }}" alt="{{ equipe.nome }}" 
+                                                 style="width: 40px; height: 40px; object-fit: contain;" 
+                                                 class="rounded" onerror="this.style.display='none'">
+                                        {% else %}
+                                            <i class="fas fa-users text-muted" style="font-size: 30px;"></i>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <strong>{{ equipe.nome }}</strong>
+                                        {% if loop.index == 1 %}
+                                            <i class="fas fa-crown text-warning ms-2"></i>
+                                        {% elif loop.index == 2 %}
+                                            <i class="fas fa-medal text-secondary ms-2"></i>
+                                        {% elif loop.index == 3 %}
+                                            <i class="fas fa-medal text-warning ms-2" style="opacity: 0.6;"></i>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if periodo.is_periodo %}
+                                            <span class="badge bg-success fs-6">{{ equipe.pontuacao_periodo or 0 }}</span>
+                                            <br><small class="text-muted">Total: {{ equipe.pontuacao_total }}</small>
+                                        {% else %}
+                                            <span class="badge bg-success fs-6">{{ equipe.pontuacao_total }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ url_for('historico_equipe', equipe_id=equipe.id) }}" 
+                                               class="btn btn-sm btn-outline-info" title="Ver Histórico">
+                                                <i class="fas fa-history"></i>
+                                            </a>
+                                            <a href="{{ url_for('editar_equipe_route', equipe_id=equipe.id) }}" 
+                                               class="btn btn-sm btn-outline-warning" title="Editar Equipe">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center p-4">
+                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Nenhuma equipe cadastrada</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<!-- Placar com Divisões -->
+<div class="row g-3">
+    <!-- Divisão A -->
+    <div class="col-lg-6 mb-3">
+        <div class="card h-100" style="border: 2px solid #4caf50;">
+            <div class="card-header bg-primary text-white py-3">
+                <h4 class="mb-0 d-flex align-items-center">
+                    <i class="fas fa-medal me-2" style="font-size: 1.5rem;"></i>
+                    <span>Divisão A</span>
+                    <span class="badge bg-light text-dark ms-auto">Top 5</span>
+                </h4>
+            </div>
+            <div class="card-body p-0">
+                {% if equipes_a %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Posição</th>
+                                    <th>Logo</th>
+                                    <th>Equipe</th>
+                                    <th>Pontos</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for equipe in equipes_a %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-{{ 'warning' if loop.index == 1 else 'secondary' }} fs-6">
+                                            {{ loop.index }}º
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if equipe.logo_url %}
+                                            <img src="{{ equipe.logo_url }}" alt="{{ equipe.nome }}" 
+                                                 style="width: 40px; height: 40px; object-fit: contain;" 
+                                                 class="rounded" onerror="this.style.display='none'">
+                                        {% else %}
+                                            <i class="fas fa-users text-muted" style="font-size: 30px;"></i>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <strong>{{ equipe.nome }}</strong>
+                                        {% if loop.index == 1 %}
+                                            <i class="fas fa-crown text-warning ms-2"></i>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if periodo.is_periodo %}
+                                            <span class="badge bg-success fs-6">{{ equipe.pontuacao_periodo or 0 }}</span>
+                                            <br><small class="text-muted">Total: {{ equipe.pontuacao_total }}</small>
+                                        {% else %}
+                                            <span class="badge bg-success fs-6">{{ equipe.pontuacao_total }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ url_for('historico_equipe', equipe_id=equipe.id) }}" 
+                                               class="btn btn-sm btn-outline-info" title="Ver Histórico">
+                                                <i class="fas fa-history"></i>
+                                            </a>
+                                            <a href="{{ url_for('editar_equipe_route', equipe_id=equipe.id) }}" 
+                                               class="btn btn-sm btn-outline-warning" title="Editar Equipe">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center p-4">
+                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Nenhuma equipe cadastrada na Divisão A</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Divisão B -->
+    <div class="col-lg-6 mb-3">
+        <div class="card h-100" style="border: 2px solid #2d7a4f;">
+            <div class="card-header bg-info text-white py-3">
+                <h4 class="mb-0 d-flex align-items-center">
+                    <i class="fas fa-medal me-2" style="font-size: 1.5rem;"></i>
+                    <span>Divisão B</span>
+                    <span class="badge bg-light text-dark ms-auto">Demais</span>
+                </h4>
+            </div>
+            <div class="card-body p-0">
+                {% if equipes_b %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Posição</th>
+                                    <th>Logo</th>
+                                    <th>Equipe</th>
+                                    <th>Pontos</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for equipe in equipes_b %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-{{ 'warning' if loop.index == 1 else 'secondary' }} fs-6">
+                                            {{ loop.index }}º
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if equipe.logo_url %}
+                                            <img src="{{ equipe.logo_url }}" alt="{{ equipe.nome }}" 
+                                                 style="width: 40px; height: 40px; object-fit: contain;" 
+                                                 class="rounded" onerror="this.style.display='none'">
+                                        {% else %}
+                                            <i class="fas fa-users text-muted" style="font-size: 30px;"></i>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <strong>{{ equipe.nome }}</strong>
+                                        {% if loop.index == 1 %}
+                                            <i class="fas fa-crown text-warning ms-2"></i>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if periodo.is_periodo %}
+                                            <span class="badge bg-success fs-6">{{ equipe.pontuacao_periodo or 0 }}</span>
+                                            <br><small class="text-muted">Total: {{ equipe.pontuacao_total }}</small>
+                                        {% else %}
+                                            <span class="badge bg-success fs-6">{{ equipe.pontuacao_total }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ url_for('historico_equipe', equipe_id=equipe.id) }}" 
+                                               class="btn btn-sm btn-outline-info" title="Ver Histórico">
+                                                <i class="fas fa-history"></i>
+                                            </a>
+                                            <a href="{{ url_for('editar_equipe_route', equipe_id=equipe.id) }}" 
+                                               class="btn btn-sm btn-outline-warning" title="Editar Equipe">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center p-4">
+                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Nenhuma equipe cadastrada na Divisão B</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Ações Rápidas -->
+<div class="row mt-4 mb-5">
+    <div class="col-12">
+        <div class="card" style="background: rgba(76, 175, 80, 0.05); border: 1px solid rgba(76, 175, 80, 0.2);">
+            <div class="card-body py-3">
+                <div class="d-flex justify-content-center gap-3 flex-wrap">
+                    <a href="{{ url_for('registrar_atividade') }}" class="btn btn-success">
+                        <i class="fas fa-plus-circle me-2"></i> Registrar Atividade
+                    </a>
+                    <a href="{{ url_for('relatorios') }}" class="btn btn-primary">
+                        <i class="fas fa-chart-line me-2"></i> Ver Relatórios
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function filtrarEsteMes() {
+    const hoje = new Date();
+    const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+    const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+    
+    const dataInicio = inicioMes.toISOString().split('T')[0];
+    const dataFim = fimMes.toISOString().split('T')[0];
+    
+    window.location.href = `{{ url_for('placar') }}?data_inicio=${dataInicio}&data_fim=${dataFim}`;
+}
+
+function filtrarMesPassado() {
+    const hoje = new Date();
+    const inicioMesPassado = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
+    const fimMesPassado = new Date(hoje.getFullYear(), hoje.getMonth(), 0);
+    
+    const dataInicio = inicioMesPassado.toISOString().split('T')[0];
+    const dataFim = fimMesPassado.toISOString().split('T')[0];
+    
+    window.location.href = `{{ url_for('placar') }}?data_inicio=${dataInicio}&data_fim=${dataFim}`;
+}
+
+function filtrarEsteAno() {
+    const hoje = new Date();
+    const inicioAno = new Date(hoje.getFullYear(), 0, 1);
+    const fimAno = new Date(hoje.getFullYear(), 11, 31);
+    
+    const dataInicio = inicioAno.toISOString().split('T')[0];
+    const dataFim = fimAno.toISOString().split('T')[0];
+    
+    window.location.href = `{{ url_for('placar') }}?data_inicio=${dataInicio}&data_fim=${dataFim}`;
+}
+</script>
+{% endblock %}

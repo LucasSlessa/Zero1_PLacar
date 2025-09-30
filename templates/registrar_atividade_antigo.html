@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+
+{% block title %}Registrar Atividade - Sistema de Placar da Igreja{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4"><i class="fas fa-plus-circle text-success"></i> Registrar Atividade</h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0"><i class="fas fa-clipboard-list"></i> Formulário de Registro</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" id="atividadeForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="equipe_id" class="form-label">
+                                <i class="fas fa-users"></i> Equipe
+                            </label>
+                            <select class="form-select" id="equipe_id" name="equipe_id" required>
+                                <option value="">Selecione uma equipe</option>
+                                {% for equipe in equipes %}
+                                    <option value="{{ equipe.id }}">
+                                        {{ equipe.nome }} (Divisão {{ equipe.divisao }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="semana" class="form-label">
+                                <i class="fas fa-calendar-week"></i> Semana
+                            </label>
+                            <input type="number" class="form-control" id="semana" name="semana" 
+                                   min="1" max="52" required>
+                        </div>
+                    </div>
+
+                    <hr>
+                    <h5 class="mb-3"><i class="fas fa-chart-line"></i> Atividades da Semana</h5>
+
+                    <!-- Pessoas Novas -->
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <label class="form-label">
+                                <i class="fas fa-user-plus text-primary"></i> Pessoas Novas
+                                <small class="text-muted">(10 pontos cada)</small>
+                            </label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="tem_pessoas_novas" 
+                                       onchange="toggleQuantidade('pessoas_novas')">
+                                <label class="form-check-label" for="tem_pessoas_novas">
+                                    Teve pessoas novas esta semana?
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="pessoas_novas" class="form-label">Quantidade</label>
+                            <input type="number" class="form-control" id="pessoas_novas" name="pessoas_novas" 
+                                   min="0" value="0" disabled>
+                        </div>
+                    </div>
+
+                    <!-- Elite Novos -->
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <label class="form-label">
+                                <i class="fas fa-star text-warning"></i> Elite Novos
+                                <small class="text-muted">(15 pontos cada)</small>
+                            </label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="tem_elite_novos" 
+                                       onchange="toggleQuantidade('elite_novos')">
+                                <label class="form-check-label" for="tem_elite_novos">
+                                    Teve novos membros elite esta semana?
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="elite_novos" class="form-label">Quantidade</label>
+                            <input type="number" class="form-control" id="elite_novos" name="elite_novos" 
+                                   min="0" value="0" disabled>
+                        </div>
+                    </div>
+
+                    <!-- Células Novas -->
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <label class="form-label">
+                                <i class="fas fa-home text-info"></i> Células Novas
+                                <small class="text-muted">(5 pontos cada)</small>
+                            </label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="tem_celulas_novas" 
+                                       onchange="toggleQuantidade('celulas_novas')">
+                                <label class="form-check-label" for="tem_celulas_novas">
+                                    Teve novas células esta semana?
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="celulas_novas" class="form-label">Quantidade</label>
+                            <input type="number" class="form-control" id="celulas_novas" name="celulas_novas" 
+                                   min="0" value="0" disabled>
+                        </div>
+                    </div>
+
+                    <!-- Arena -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="arena_participacao" 
+                                       name="arena_participacao">
+                                <label class="form-check-label" for="arena_participacao">
+                                    <i class="fas fa-fire text-danger"></i> Arena - Participou da Arena esta semana?
+                                    <small class="text-muted">(20 pontos)</small>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Domingo -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="domingo_participacao" 
+                                       name="domingo_participacao">
+                                <label class="form-check-label" for="domingo_participacao">
+                                    <i class="fas fa-pray text-secondary"></i> Domingo - Participou do culto de domingo?
+                                    <small class="text-muted">(10 pontos)</small>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Parceiro de Deus -->
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <label class="form-label">
+                                <i class="fas fa-handshake text-success"></i> Parceiro de Deus Novos
+                                <small class="text-muted">(25 pontos cada)</small>
+                            </label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="tem_parceiro_deus_novos" 
+                                       onchange="toggleQuantidade('parceiro_deus_novos')">
+                                <label class="form-check-label" for="tem_parceiro_deus_novos">
+                                    Teve novos parceiros de Deus esta semana?
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="parceiro_deus_novos" class="form-label">Quantidade</label>
+                            <input type="number" class="form-control" id="parceiro_deus_novos" name="parceiro_deus_novos" 
+                                   min="0" value="0" disabled>
+                        </div>
+                    </div>
+
+                    <hr>
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <i class="fas fa-calculator"></i> 
+                                <strong>Pontuação Estimada: </strong>
+                                <span id="pontuacao_estimada">0</span> pontos
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12 text-center">
+                            <button type="submit" class="btn btn-success btn-lg me-3">
+                                <i class="fas fa-save"></i> Registrar Atividade
+                            </button>
+                            <a href="{{ url_for('placar') }}" class="btn btn-secondary btn-lg">
+                                <i class="fas fa-arrow-left"></i> Voltar ao Placar
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleQuantidade(campo) {
+    const checkbox = document.getElementById('tem_' + campo);
+    const input = document.getElementById(campo);
+    
+    if (checkbox.checked) {
+        input.disabled = false;
+        input.focus();
+    } else {
+        input.disabled = true;
+        input.value = 0;
+    }
+    
+    calcularPontuacao();
+}
+
+function calcularPontuacao() {
+    let pontos = 0;
+    
+    // Pessoas novas
+    const pessoasNovas = parseInt(document.getElementById('pessoas_novas').value) || 0;
+    pontos += pessoasNovas * 10;
+    
+    // Elite novos
+    const eliteNovos = parseInt(document.getElementById('elite_novos').value) || 0;
+    pontos += eliteNovos * 15;
+    
+    // Células novas
+    const celulasNovas = parseInt(document.getElementById('celulas_novas').value) || 0;
+    pontos += celulasNovas * 5;
+    
+    // Arena
+    if (document.getElementById('arena_participacao').checked) {
+        pontos += 20;
+    }
+    
+    // Domingo
+    if (document.getElementById('domingo_participacao').checked) {
+        pontos += 10;
+    }
+    
+    // Parceiro de Deus
+    const parceiroDeus = parseInt(document.getElementById('parceiro_deus_novos').value) || 0;
+    pontos += parceiroDeus * 25;
+    
+    document.getElementById('pontuacao_estimada').textContent = pontos;
+}
+
+// Adicionar listeners para recalcular pontuação
+document.addEventListener('DOMContentLoaded', function() {
+    const inputs = document.querySelectorAll('input[type="number"], input[type="checkbox"]');
+    inputs.forEach(input => {
+        input.addEventListener('change', calcularPontuacao);
+        input.addEventListener('input', calcularPontuacao);
+    });
+});
+</script>
+{% endblock %}
