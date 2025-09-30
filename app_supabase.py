@@ -453,9 +453,12 @@ def gerar_analise_com_ia(registros, equipes, tipo_analise, data_inicio, data_fim
     for registro in registros:
         equipe_id = registro['equipe_id']
         if equipe_id not in dados_por_equipe:
-            equipe_nome = next((e['nome'] for e in equipes if e['id'] == equipe_id), 'Desconhecida')
+            equipe_info = next((e for e in equipes if e['id'] == equipe_id), None)
+            equipe_nome = equipe_info['nome'] if equipe_info else 'Desconhecida'
+            equipe_logo = equipe_info.get('logo_url', '') if equipe_info else ''
             dados_por_equipe[equipe_id] = {
                 'nome': equipe_nome,
+                'logo_url': equipe_logo,
                 'total_pontos': 0,
                 'pessoas_novas': 0,
                 'celulas_realizadas': 0,
@@ -494,82 +497,179 @@ def gerar_analise_local(dados_por_equipe, tipo_analise, data_inicio, data_fim):
     
     # Análise Individual
     if tipo_analise in ['completa', 'individual']:
-        html += '<h4 class="mt-4"><i class="fas fa-user-circle text-primary"></i> Análise Individual por Equipe</h4>'
+        html += '<h4 class="mt-4"><i class="fas fa-user-circle text-primary"></i> Análise Individual Detalhada por Equipe</h4>'
         
-        for equipe_id, dados in sorted(dados_por_equipe.items(), key=lambda x: x[1]['total_pontos'], reverse=True):
+        # Calcula ranking
+        ranking_list = sorted(dados_por_equipe.items(), key=lambda x: x[1]['total_pontos'], reverse=True)
+        total_equipes = len(ranking_list)
+        
+        for idx, (equipe_id, dados) in enumerate(ranking_list, 1):
             pontos_fortes = []
             areas_atencao = []
             recomendacoes = []
+            detalhes_pontuacao = []
+            
+            # Determinar posição e divisão
+            posicao = idx
+            divisao = "A" if posicao <= 5 else "B"
+            medal = '🥇' if posicao == 1 else ('🥈' if posicao == 2 else ('🥉' if posicao == 3 else ''))
+            
+            # Análise de posição
+            if posicao == 1:
+                explicacao_posicao = f"🏆 <strong>Líder Absoluto!</strong> A equipe {dados['nome']} conquistou o 1º lugar com <strong>{dados['total_pontos']} pontos</strong>, demonstrando excelência em todas as áreas."
+            elif posicao <= 3:
+                explicacao_posicao = f"{medal} <strong>Pódio Garantido!</strong> A equipe está em <strong>{posicao}º lugar</strong> na Divisão A com <strong>{dados['total_pontos']} pontos</strong>, mostrando desempenho excepcional."
+            elif posicao <= 5:
+                explicacao_posicao = f"⭐ <strong>Divisão A!</strong> A equipe está em <strong>{posicao}º lugar</strong> entre as top 5, com <strong>{dados['total_pontos']} pontos</strong>. Continue assim para manter a posição!"
+            else:
+                diff_para_top5 = ranking_list[4][1]['total_pontos'] - dados['total_pontos']
+                explicacao_posicao = f"🎯 <strong>Divisão B</strong> - Posição <strong>{posicao}º</strong> com <strong>{dados['total_pontos']} pontos</strong>. Faltam apenas <strong>{diff_para_top5} pontos</strong> para alcançar a Divisão A!"
+            
+            # Detalhamento da pontuação
+            if dados['pessoas_novas'] > 0:
+                pts = dados['pessoas_novas'] * 10
+                detalhes_pontuacao.append(f"👥 <strong>Pessoas Novas:</strong> {dados['pessoas_novas']} pessoas × 10pts = <span class='badge bg-success'>{pts} pontos</span>")
+            
+            if dados['celulas_realizadas'] > 0:
+                pts = dados['celulas_realizadas'] * 10
+                detalhes_pontuacao.append(f"⚪ <strong>Células Realizadas:</strong> {dados['celulas_realizadas']} células × 10pts = <span class='badge bg-primary'>{pts} pontos</span>")
+            
+            if dados['celulas_elite'] > 0:
+                pts = dados['celulas_elite'] * 10
+                detalhes_pontuacao.append(f"⭐ <strong>Células Elite:</strong> {dados['celulas_elite']} células × 10pts = <span class='badge bg-warning'>{pts} pontos</span>")
+            
+            if dados['pessoas_terca'] > 0:
+                pts = dados['pessoas_terca'] * 10
+                detalhes_pontuacao.append(f"🗓️ <strong>Terça-feira:</strong> {dados['pessoas_terca']} pessoas × 10pts = <span class='badge bg-info'>{pts} pontos</span>")
+            
+            if dados['pessoas_arena'] > 0:
+                pts = dados['pessoas_arena'] * 10
+                detalhes_pontuacao.append(f"🔥 <strong>Arena:</strong> {dados['pessoas_arena']} pessoas × 10pts = <span class='badge bg-danger'>{pts} pontos</span>")
+            
+            if dados['pessoas_domingo'] > 0:
+                pts = dados['pessoas_domingo'] * 10
+                detalhes_pontuacao.append(f"⛪ <strong>Domingo:</strong> {dados['pessoas_domingo']} pessoas × 10pts = <span class='badge bg-secondary'>{pts} pontos</span>")
+            
+            if dados['arrecadacao'] > 0:
+                pts = dados['arrecadacao'] * 10
+                detalhes_pontuacao.append(f"💰 <strong>Parceiro de Deus:</strong> R$ {dados['arrecadacao']:.2f} × 10pts = <span class='badge bg-success'>{int(pts)} pontos</span>")
+            
+            if not detalhes_pontuacao:
+                detalhes_pontuacao.append("📄 Nenhuma pontuação registrada neste período")
             
             # Análise de pontos fortes
             if dados['pessoas_novas'] > 10:
-                pontos_fortes.append(f"🌟 <strong>Excelência em Evangelismo:</strong> {dados['pessoas_novas']} pessoas novas - resultado excepcional!")
+                pontos_fortes.append(f"🌟 <strong>Excelência em Evangelismo:</strong> {dados['pessoas_novas']} pessoas novas conquistadas - um dos melhores resultados!")
+            elif dados['pessoas_novas'] >= 5:
+                pontos_fortes.append(f"👍 <strong>Bom Evangelismo:</strong> {dados['pessoas_novas']} pessoas novas - resultado sólido")
+            
             if dados['celulas_elite'] > 5:
-                pontos_fortes.append(f"⭐ <strong>Células de Elite:</strong> {dados['celulas_elite']} células elite demonstram excelência na execução")
+                pontos_fortes.append(f"⭐ <strong>Destaque em Células Elite:</strong> {dados['celulas_elite']} células elite mostram compromisso com excelência")
+            elif dados['celulas_elite'] >= 3:
+                pontos_fortes.append(f"✨ <strong>Células de Qualidade:</strong> {dados['celulas_elite']} células elite - bom padrão")
+            
             if dados['arrecadacao'] > 100:
-                pontos_fortes.append(f"💰 <strong>Comprometimento Financeiro:</strong> R$ {dados['arrecadacao']:.2f} em Parceiro de Deus - engajamento notável")
+                pontos_fortes.append(f"💰 <strong>Comprometimento Financeiro Forte:</strong> R$ {dados['arrecadacao']:.2f} em Parceiro de Deus demonstra engajamento")
+            
             if dados['pessoas_arena'] > 20:
-                pontos_fortes.append(f"🔥 <strong>Participação na Arena:</strong> {dados['pessoas_arena']} pessoas - grande mobilização")
+                pontos_fortes.append(f"🔥 <strong>Participação Massiva na Arena:</strong> {dados['pessoas_arena']} pessoas - excelente mobilização!")
+            
+            if dados['pessoas_domingo'] > 20:
+                pontos_fortes.append(f"⛪ <strong>Presença Forte no Domingo:</strong> {dados['pessoas_domingo']} pessoas - ótima frequência")
             
             # Áreas de atenção
             if dados['pessoas_novas'] < 5:
-                areas_atencao.append("⚠️ Evangelismo precisa de atenção - poucas pessoas novas")
-                recomendacoes.append("💡 Implementar estratégias de convite pessoal e eventos evangelisticos")
+                areas_atencao.append(f"⚠️ <strong>Evangelismo Precisa Crescer:</strong> Apenas {dados['pessoas_novas']} pessoas novas - invista mais em estratégias de alcance")
+                recomendacoes.append("💡 Implementar campanha de convites pessoais e eventos evangelisticos")
+            
             if dados['celulas_realizadas'] < dados['registros_count'] * 3:
-                areas_atencao.append("⚠️ Taxa de realização de células abaixo do esperado")
-                recomendacoes.append("💡 Fortalecer comprometimento dos líderes de célula e oferecer suporte")
+                areas_atencao.append(f"⚠️ <strong>Células Abaixo do Esperado:</strong> {dados['celulas_realizadas']} células realizadas - potencial para mais")
+                recomendacoes.append("💡 Fortalecer comprometimento dos líderes e criar suporte contínuo")
+            
             if dados['pessoas_domingo'] < 15:
-                areas_atencao.append("⚠️ Participação no domingo pode melhorar")
-                recomendacoes.append("💡 Incentivar presença nos cultos dominicais e criar cultura de frequência")
+                areas_atencao.append(f"⚠️ <strong>Presença no Domingo Baixa:</strong> {dados['pessoas_domingo']} pessoas - criar cultura de frequência")
+                recomendacoes.append("💡 Campanha de valorização dos cultos dominicais e followup de ausentes")
+            
             if dados['arrecadacao'] < 50:
-                areas_atencao.append("⚠️ Engajamento com Parceiro de Deus está baixo")
-                recomendacoes.append("💡 Ensinar sobre contribuição e benefícios de ser parceiro")
+                areas_atencao.append(f"⚠️ <strong>Parceiro de Deus Precisa Atenção:</strong> R$ {dados['arrecadacao']:.2f} - ensinar sobre contribuição")
+                recomendacoes.append("💡 Workshop sobre benefícios de ser Parceiro de Deus e impacto do dízimo")
+            
+            # Recomendações específicas por posição
+            if posicao == 1:
+                recomendacoes.append("🏆 Manter o ritmo e servir de exemplo para outras equipes")
+            elif posicao > 5:
+                recomendacoes.append(f"🎯 Foco total nos próximos {diff_para_top5} pontos para alcançar Divisão A")
             
             if not pontos_fortes:
-                pontos_fortes.append("🎯 Equipe em desenvolvimento - continue investindo!")
+                pontos_fortes.append("🎯 Equipe em fase de desenvolvimento - todo esforço é valioso!")
             if not areas_atencao:
-                areas_atencao.append("✅ Nenhuma área crítica identificada - parabéns!")
+                areas_atencao.append("✅ Nenhuma área crítica - parabéns pelo equilíbrio!")
             if not recomendacoes:
-                recomendacoes.append("🎉 Continue com o excelente trabalho!")
+                recomendacoes.append("🎉 Continue investindo no que já funciona bem!")
+            
+            # Preparar logo
+            logo_html = ''
+            if dados.get('logo_url'):
+                logo_html = f'<img src="{dados["logo_url"]}" alt="{dados["nome"]}" style="width: 40px; height: 40px; object-fit: contain; margin-right: 10px; border-radius: 8px; background: white; padding: 2px;">'
             
             html += f"""
-            <div class="card mb-3">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">
-                        <i class="fas fa-trophy text-warning"></i> {dados['nome']}
-                        <span class="badge bg-success float-end">{dados['total_pontos']} pontos</span>
+            <div class="card mb-4 border-{'' if posicao <= 5 else 'secondary'}">
+                <div class="card-header {'bg-warning' if posicao <= 3 else ('bg-success' if posicao <= 5 else 'bg-light')} text-{'white' if posicao <= 5 else 'dark'}">
+                    <h5 class="mb-0 d-flex align-items-center justify-content-between">
+                        <span class="d-flex align-items-center">
+                            {logo_html}
+                            {medal} {dados['nome']}
+                        </span>
+                        <span class="badge {'bg-light text-dark' if posicao <= 5 else 'bg-success'}">
+                            Divisão {divisao} - {dados['total_pontos']} pts
+                        </span>
                     </h5>
                 </div>
                 <div class="card-body">
+                    <!-- Explicação da Posição -->
+                    <div class="alert alert-{'success' if posicao <= 5 else 'info'} mb-3">
+                        <h6 class="alert-heading"><i class="fas fa-map-marked-alt"></i> Por que esta posição?</h6>
+                        <p class="mb-0">{explicacao_posicao}</p>
+                    </div>
+                    
+                    <!-- Detalhamento da Pontuação -->
+                    <h6 class="text-primary mb-3"><i class="fas fa-calculator"></i> Como a Equipe Pontuou:</h6>
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <ul class="list-unstyled">
+                                {''.join([f'<li class="mb-2">{d}</li>' for d in detalhes_pontuacao])}
+                            </ul>
+                            <div class="alert alert-secondary mt-2">
+                                <strong><i class="fas fa-equals"></i> Total:</strong> {dados['total_pontos']} pontos acumulados
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <!-- Pontos Fortes e Áreas -->
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-6 mb-3">
                             <h6 class="text-success"><i class="fas fa-check-circle"></i> Pontos Fortes</h6>
                             <ul class="list-unstyled">
                                 {''.join([f'<li class="mb-2">{p}</li>' for p in pontos_fortes])}
                             </ul>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-6 mb-3">
                             <h6 class="text-warning"><i class="fas fa-exclamation-triangle"></i> Áreas de Atenção</h6>
                             <ul class="list-unstyled">
                                 {''.join([f'<li class="mb-2">{a}</li>' for a in areas_atencao])}
                             </ul>
                         </div>
                     </div>
+                    
                     <hr>
+                    
+                    <!-- Recomendações -->
                     <h6 class="text-info"><i class="fas fa-lightbulb"></i> Recomendações Estratégicas</h6>
                     <ul class="list-unstyled">
                         {''.join([f'<li class="mb-2">{r}</li>' for r in recomendacoes])}
                     </ul>
-                    
-                    <div class="mt-3">
-                        <small class="text-muted">
-                            <i class="fas fa-chart-bar"></i> Métricas: 
-                            {dados['pessoas_novas']} novas | 
-                            {dados['celulas_realizadas']} células | 
-                            {dados['celulas_elite']} elite | 
-                            R$ {dados['arrecadacao']:.2f}
-                        </small>
-                    </div>
                 </div>
             </div>
             """
@@ -594,7 +694,12 @@ def gerar_analise_local(dados_por_equipe, tipo_analise, data_inicio, data_fim):
             if dados['celulas_elite'] == max(d['celulas_elite'] for d in dados_por_equipe.values()):
                 destaque += '⭐ Células Elite '
             
-            html += f"<tr><td>{medal} {idx}º</td><td><strong>{dados['nome']}</strong></td><td>{dados['total_pontos']}</td><td><small>{destaque}</small></td></tr>"
+            # Logo da equipe
+            logo_td = ''
+            if dados.get('logo_url'):
+                logo_td = f'<img src="{dados["logo_url"]}" alt="{dados["nome"]}" style="width: 30px; height: 30px; object-fit: contain; margin-right: 8px; border-radius: 6px; background: white; padding: 2px;">'
+            
+            html += f"<tr><td>{medal} {idx}º</td><td>{logo_td}<strong>{dados['nome']}</strong></td><td>{dados['total_pontos']}</td><td><small>{destaque}</small></td></tr>"
         
         html += '</tbody></table></div></div>'
         
