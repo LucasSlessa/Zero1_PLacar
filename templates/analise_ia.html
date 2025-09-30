@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}Análise com IA - ZERO 1{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-brain text-primary"></i> Análise Inteligente com IA
+            <span class="badge bg-success">Beta</span>
+        </h1>
+        <p class="lead">
+            Use inteligência artificial para analisar o desempenho das equipes e receber insights estratégicos
+        </p>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-lg-10 mx-auto">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-sliders-h"></i> Configurar Análise</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('gerar_analise_ia') }}" id="formAnalise">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="data_inicio" class="form-label">
+                                <i class="fas fa-calendar-alt"></i> Data Início
+                            </label>
+                            <input type="date" class="form-control" id="data_inicio" name="data_inicio" required>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="data_fim" class="form-label">
+                                <i class="fas fa-calendar-alt"></i> Data Fim
+                            </label>
+                            <input type="date" class="form-control" id="data_fim" name="data_fim" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="tipo_analise" class="form-label">
+                            <i class="fas fa-chart-pie"></i> Tipo de Análise
+                        </label>
+                        <select class="form-select" id="tipo_analise" name="tipo_analise" required>
+                            <option value="completa">📊 Análise Completa (Individual + Comparativa)</option>
+                            <option value="individual">👤 Análise Individual por Equipe</option>
+                            <option value="comparativa">⚖️ Análise Comparativa entre Equipes</option>
+                            <option value="recomendacoes">💡 Recomendações Estratégicas</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="equipe_id" class="form-label">
+                            <i class="fas fa-users"></i> Equipe (Opcional - deixe em branco para todas)
+                        </label>
+                        <select class="form-select" id="equipe_id" name="equipe_id">
+                            <option value="">Todas as Equipes</option>
+                            {% for equipe in equipes %}
+                                <option value="{{ equipe['id'] }}">{{ equipe['nome'] }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> 
+                        <strong>Como funciona:</strong> Nossa IA analisa os dados de desempenho e gera insights personalizados sobre:
+                        <ul class="mb-0 mt-2">
+                            <li>✅ Pontos fortes de cada equipe</li>
+                            <li>⚠️ Áreas que precisam de atenção</li>
+                            <li>📈 Tendências de crescimento</li>
+                            <li>💡 Sugestões de melhoria específicas</li>
+                            <li>🏆 Comparação de desempenho</li>
+                        </ul>
+                    </div>
+
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-primary btn-lg" id="btnGerar">
+                            <i class="fas fa-magic"></i> Gerar Análise com IA
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Área de resultados -->
+<div class="row mt-4" id="areaResultados" style="display: none;">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-chart-line"></i> Resultados da Análise</h5>
+            </div>
+            <div class="card-body">
+                <div id="conteudoAnalise">
+                    <!-- Conteúdo será inserido via JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('formAnalise').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const btnGerar = document.getElementById('btnGerar');
+    btnGerar.disabled = true;
+    btnGerar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analisando...';
+    
+    // Mostrar área de resultados com loading
+    const areaResultados = document.getElementById('areaResultados');
+    areaResultados.style.display = 'block';
+    document.getElementById('conteudoAnalise').innerHTML = `
+        <div class="text-center py-5">
+            <i class="fas fa-brain fa-3x text-primary mb-3"></i>
+            <h4>IA Analisando Dados...</h4>
+            <p class="text-muted">Aguarde enquanto processamos os dados e geramos insights inteligentes</p>
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Carregando...</span>
+            </div>
+        </div>
+    `;
+    
+    // Scroll para resultados
+    areaResultados.scrollIntoView({ behavior: 'smooth' });
+    
+    // Enviar formulário
+    fetch(this.action, {
+        method: 'POST',
+        body: new FormData(this)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('conteudoAnalise').innerHTML = data.html;
+        } else {
+            document.getElementById('conteudoAnalise').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i> 
+                    <strong>Erro:</strong> ${data.error || 'Não foi possível gerar a análise'}
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        document.getElementById('conteudoAnalise').innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle"></i> 
+                <strong>Erro:</strong> ${error.message}
+            </div>
+        `;
+    })
+    .finally(() => {
+        btnGerar.disabled = false;
+        btnGerar.innerHTML = '<i class="fas fa-magic"></i> Gerar Análise com IA';
+    });
+});
+
+// Definir data padrão (último mês)
+const hoje = new Date();
+const umMesAtras = new Date();
+umMesAtras.setMonth(umMesAtras.getMonth() - 1);
+
+document.getElementById('data_fim').valueAsDate = hoje;
+document.getElementById('data_inicio').valueAsDate = umMesAtras;
+</script>
+{% endblock %}

@@ -405,6 +405,280 @@ def relatorio_periodo():
                          data_fim=datetime.strptime(data_fim, '%Y-%m-%d').date(),
                          equipe_selecionada=equipe_id)
 
+@app.route('/analise_ia')
+def analise_ia():
+    """Página de análise com IA"""
+    equipes = get_equipes()
+    return render_template('analise_ia.html', equipes=equipes)
+
+@app.route('/gerar_analise_ia', methods=['POST'])
+def gerar_analise_ia():
+    """Gera análise com IA usando API gratuita"""
+    try:
+        data_inicio = request.form['data_inicio']
+        data_fim = request.form['data_fim']
+        tipo_analise = request.form['tipo_analise']
+        equipe_id = request.form.get('equipe_id')
+        
+        # Busca dados
+        registros = get_registros_por_periodo(data_inicio, data_fim, equipe_id)
+        equipes = get_equipes()
+        
+        if not registros:
+            return jsonify({
+                'success': False,
+                'error': 'Nenhum registro encontrado para o período selecionado'
+            })
+        
+        # Prepara dados para análise
+        analise_html = gerar_analise_com_ia(registros, equipes, tipo_analise, data_inicio, data_fim)
+        
+        return jsonify({
+            'success': True,
+            'html': analise_html
+        })
+        
+    except Exception as e:
+        print(f"Erro ao gerar análise: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+def gerar_analise_com_ia(registros, equipes, tipo_analise, data_inicio, data_fim):
+    """Gera análise usando IA gratuita (Groq API)"""
+    
+    # Agrupa dados por equipe
+    dados_por_equipe = {}
+    for registro in registros:
+        equipe_id = registro['equipe_id']
+        if equipe_id not in dados_por_equipe:
+            equipe_nome = next((e['nome'] for e in equipes if e['id'] == equipe_id), 'Desconhecida')
+            dados_por_equipe[equipe_id] = {
+                'nome': equipe_nome,
+                'total_pontos': 0,
+                'pessoas_novas': 0,
+                'celulas_realizadas': 0,
+                'celulas_elite': 0,
+                'pessoas_terca': 0,
+                'pessoas_arena': 0,
+                'pessoas_domingo': 0,
+                'arrecadacao': 0,
+                'registros_count': 0
+            }
+        
+        dados = dados_por_equipe[equipe_id]
+        dados['total_pontos'] += registro.get('pontuacao', 0)
+        dados['pessoas_novas'] += registro.get('qtd_pessoas_novas', 0)
+        dados['celulas_realizadas'] += registro.get('qtd_celulas_realizadas', 0)
+        dados['celulas_elite'] += registro.get('qtd_celulas_elite', 0)
+        dados['pessoas_terca'] += registro.get('qtd_pessoas_terca', 0)
+        dados['pessoas_arena'] += registro.get('qtd_pessoas_arena', 0)
+        dados['pessoas_domingo'] += registro.get('qtd_pessoas_domingo', 0)
+        dados['arrecadacao'] += registro.get('valor_arrecadacao_parceiro', 0)
+        dados['registros_count'] += 1
+    
+    # Gera análise sem IA externa (local)
+    html = gerar_analise_local(dados_por_equipe, tipo_analise, data_inicio, data_fim)
+    
+    return html
+
+def gerar_analise_local(dados_por_equipe, tipo_analise, data_inicio, data_fim):
+    """Gera análise inteligente local (sem API externa)"""
+    
+    html = f"""
+    <div class="alert alert-info">
+        <i class="fas fa-calendar"></i> Período: <strong>{data_inicio}</strong> até <strong>{data_fim}</strong>
+    </div>
+    """
+    
+    # Análise Individual
+    if tipo_analise in ['completa', 'individual']:
+        html += '<h4 class="mt-4"><i class="fas fa-user-circle text-primary"></i> Análise Individual por Equipe</h4>'
+        
+        for equipe_id, dados in sorted(dados_por_equipe.items(), key=lambda x: x[1]['total_pontos'], reverse=True):
+            pontos_fortes = []
+            areas_atencao = []
+            recomendacoes = []
+            
+            # Análise de pontos fortes
+            if dados['pessoas_novas'] > 10:
+                pontos_fortes.append(f"🌟 <strong>Excelência em Evangelismo:</strong> {dados['pessoas_novas']} pessoas novas - resultado excepcional!")
+            if dados['celulas_elite'] > 5:
+                pontos_fortes.append(f"⭐ <strong>Células de Elite:</strong> {dados['celulas_elite']} células elite demonstram excelência na execução")
+            if dados['arrecadacao'] > 100:
+                pontos_fortes.append(f"💰 <strong>Comprometimento Financeiro:</strong> R$ {dados['arrecadacao']:.2f} em Parceiro de Deus - engajamento notável")
+            if dados['pessoas_arena'] > 20:
+                pontos_fortes.append(f"🔥 <strong>Participação na Arena:</strong> {dados['pessoas_arena']} pessoas - grande mobilização")
+            
+            # Áreas de atenção
+            if dados['pessoas_novas'] < 5:
+                areas_atencao.append("⚠️ Evangelismo precisa de atenção - poucas pessoas novas")
+                recomendacoes.append("💡 Implementar estratégias de convite pessoal e eventos evangelisticos")
+            if dados['celulas_realizadas'] < dados['registros_count'] * 3:
+                areas_atencao.append("⚠️ Taxa de realização de células abaixo do esperado")
+                recomendacoes.append("💡 Fortalecer comprometimento dos líderes de célula e oferecer suporte")
+            if dados['pessoas_domingo'] < 15:
+                areas_atencao.append("⚠️ Participação no domingo pode melhorar")
+                recomendacoes.append("💡 Incentivar presença nos cultos dominicais e criar cultura de frequência")
+            if dados['arrecadacao'] < 50:
+                areas_atencao.append("⚠️ Engajamento com Parceiro de Deus está baixo")
+                recomendacoes.append("💡 Ensinar sobre contribuição e benefícios de ser parceiro")
+            
+            if not pontos_fortes:
+                pontos_fortes.append("🎯 Equipe em desenvolvimento - continue investindo!")
+            if not areas_atencao:
+                areas_atencao.append("✅ Nenhuma área crítica identificada - parabéns!")
+            if not recomendacoes:
+                recomendacoes.append("🎉 Continue com o excelente trabalho!")
+            
+            html += f"""
+            <div class="card mb-3">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-trophy text-warning"></i> {dados['nome']}
+                        <span class="badge bg-success float-end">{dados['total_pontos']} pontos</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-success"><i class="fas fa-check-circle"></i> Pontos Fortes</h6>
+                            <ul class="list-unstyled">
+                                {''.join([f'<li class="mb-2">{p}</li>' for p in pontos_fortes])}
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-warning"><i class="fas fa-exclamation-triangle"></i> Áreas de Atenção</h6>
+                            <ul class="list-unstyled">
+                                {''.join([f'<li class="mb-2">{a}</li>' for a in areas_atencao])}
+                            </ul>
+                        </div>
+                    </div>
+                    <hr>
+                    <h6 class="text-info"><i class="fas fa-lightbulb"></i> Recomendações Estratégicas</h6>
+                    <ul class="list-unstyled">
+                        {''.join([f'<li class="mb-2">{r}</li>' for r in recomendacoes])}
+                    </ul>
+                    
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            <i class="fas fa-chart-bar"></i> Métricas: 
+                            {dados['pessoas_novas']} novas | 
+                            {dados['celulas_realizadas']} células | 
+                            {dados['celulas_elite']} elite | 
+                            R$ {dados['arrecadacao']:.2f}
+                        </small>
+                    </div>
+                </div>
+            </div>
+            """
+    
+    # Análise Comparativa
+    if tipo_analise in ['completa', 'comparativa']:
+        html += '<h4 class="mt-4"><i class="fas fa-balance-scale text-info"></i> Análise Comparativa</h4>'
+        
+        # Ranking
+        ranking = sorted(dados_por_equipe.items(), key=lambda x: x[1]['total_pontos'], reverse=True)
+        
+        html += '<div class="card mb-3"><div class="card-body">'
+        html += '<h6><i class="fas fa-medal text-warning"></i> Ranking Geral</h6>'
+        html += '<table class="table table-sm">'
+        html += '<thead><tr><th>Posição</th><th>Equipe</th><th>Pontos</th><th>Destaque</th></tr></thead><tbody>'
+        
+        for idx, (equipe_id, dados) in enumerate(ranking, 1):
+            medal = '🥇' if idx == 1 else ('🥈' if idx == 2 else ('🥉' if idx == 3 else ''))
+            destaque = ''
+            if dados['pessoas_novas'] == max(d['pessoas_novas'] for d in dados_por_equipe.values()):
+                destaque += '🌟 Evangelismo '
+            if dados['celulas_elite'] == max(d['celulas_elite'] for d in dados_por_equipe.values()):
+                destaque += '⭐ Células Elite '
+            
+            html += f"<tr><td>{medal} {idx}º</td><td><strong>{dados['nome']}</strong></td><td>{dados['total_pontos']}</td><td><small>{destaque}</small></td></tr>"
+        
+        html += '</tbody></table></div></div>'
+        
+        # Comparação por categoria
+        html += '<div class="row">'
+        categorias = [
+            ('pessoas_novas', 'Pessoas Novas', 'success', 'user-plus'),
+            ('celulas_elite', 'Células Elite', 'warning', 'star'),
+            ('pessoas_arena', 'Arena', 'danger', 'fire'),
+            ('arrecadacao', 'Arrecação', 'info', 'dollar-sign')
+        ]
+        
+        for campo, nome, cor, icone in categorias:
+            melhor = max(dados_por_equipe.items(), key=lambda x: x[1][campo])
+            valor = melhor[1][campo]
+            if campo == 'arrecadacao':
+                valor_fmt = f"R$ {valor:.2f}"
+            else:
+                valor_fmt = str(int(valor))
+            
+            html += f"""
+            <div class="col-md-3 mb-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="fas fa-{icone} fa-2x text-{cor} mb-2"></i>
+                        <h6>{nome}</h6>
+                        <p class="mb-0"><strong>{melhor[1]['nome']}</strong></p>
+                        <p class="text-{cor} mb-0">{valor_fmt}</p>
+                    </div>
+                </div>
+            </div>
+            """
+        
+        html += '</div>'
+    
+    # Recomendações Gerais
+    if tipo_analise in ['completa', 'recomendacoes']:
+        html += '<h4 class="mt-4"><i class="fas fa-rocket text-success"></i> Recomendações Estratégicas Gerais</h4>'
+        html += '<div class="card"><div class="card-body">'
+        
+        total_pessoas_novas = sum(d['pessoas_novas'] for d in dados_por_equipe.values())
+        media_pessoas_novas = total_pessoas_novas / len(dados_por_equipe) if dados_por_equipe else 0
+        
+        recomendacoes_gerais = []
+        
+        if media_pessoas_novas > 8:
+            recomendacoes_gerais.append({
+                'titulo': '🎉 Crescimento Evangélistico Forte',
+                'desc': 'O número de pessoas novas está excelente! Continue investindo em eventos de convite e treinamento de evangelismo.',
+                'tipo': 'success'
+            })
+        else:
+            recomendacoes_gerais.append({
+                'titulo': '🎯 Foco em Evangelismo',
+                'desc': 'Implementar campanha intensiva de evangelismo. Sugestões: eventos sociais, visitas, treinamento de líderes.',
+                'tipo': 'warning'
+            })
+        
+        recomendacoes_gerais.append({
+            'titulo': '📈 Planejamento Estratégico',
+            'desc': 'Definir metas claras para o próximo período baseadas nesta análise. Estabelecer KPIs e acompanhamento semanal.',
+            'tipo': 'info'
+        })
+        
+        recomendacoes_gerais.append({
+            'titulo': '🎖️ Reconhecimento e Motivação',
+            'desc': 'Celebrar vitórias publicamente. Criar sistema de reconhecimento para equipes e líderes que se destacam.',
+            'tipo': 'primary'
+        })
+        
+        for rec in recomendacoes_gerais:
+            html += f"""
+            <div class="alert alert-{rec['tipo']} mb-3">
+                <h6 class="alert-heading">{rec['titulo']}</h6>
+                <p class="mb-0">{rec['desc']}</p>
+            </div>
+            """
+        
+        html += '</div></div>'
+    
+    html += '<div class="alert alert-light mt-4"><i class="fas fa-info-circle"></i> <small>Análise gerada em ' + datetime.now().strftime('%d/%m/%Y às %H:%M') + '</small></div>'
+    
+    return html
+
 @app.route('/editar_equipe/<int:equipe_id>', methods=['GET', 'POST'])
 def editar_equipe_route(equipe_id):
     equipe = get_equipe_by_id(equipe_id)
