@@ -462,6 +462,9 @@ def gerar_analise_com_ia(registros, equipes, tipo_analise, data_inicio, data_fim
                 'logo_url': equipe_logo,
                 'total_pontos': 0,
                 'pessoas_novas': 0,
+                'pessoas_novas_terca': 0,
+                'pessoas_novas_arena': 0,
+                'pessoas_novas_domingo': 0,
                 'celulas_realizadas': 0,
                 'celulas_elite': 0,
                 'pessoas_terca': 0,
@@ -474,6 +477,9 @@ def gerar_analise_com_ia(registros, equipes, tipo_analise, data_inicio, data_fim
         dados = dados_por_equipe[equipe_id]
         dados['total_pontos'] += registro.get('pontuacao', 0)
         dados['pessoas_novas'] += registro.get('qtd_pessoas_novas', 0)
+        dados['pessoas_novas_terca'] += registro.get('qtd_pessoas_novas_terca', 0)
+        dados['pessoas_novas_arena'] += registro.get('qtd_pessoas_novas_arena', 0)
+        dados['pessoas_novas_domingo'] += registro.get('qtd_pessoas_novas_domingo', 0)
         dados['celulas_realizadas'] += registro.get('qtd_celulas_realizadas', 0)
         dados['celulas_elite'] += registro.get('qtd_celulas_elite', 0)
         dados['pessoas_terca'] += registro.get('qtd_pessoas_terca', 0)
@@ -578,13 +584,25 @@ def gerar_analise_local(dados_por_equipe, tipo_analise, data_inicio, data_fim, o
                 pts = dados['pessoas_terca'] * 10
                 detalhes_pontuacao.append(f"🗓️ <strong>Terça-feira:</strong> {dados['pessoas_terca']} pessoas × 10pts = <span class='badge bg-info'>{pts} pontos</span>")
             
+            if dados['pessoas_novas_terca'] > 0:
+                pts = dados['pessoas_novas_terca'] * 15
+                detalhes_pontuacao.append(f"🌟 <strong>Pessoas Novas (Terça):</strong> {dados['pessoas_novas_terca']} pessoas × 15pts = <span class='badge bg-info'>{pts} pontos</span>")
+            
             if dados['pessoas_arena'] > 0:
                 pts = dados['pessoas_arena'] * 10
                 detalhes_pontuacao.append(f"🔥 <strong>Arena:</strong> {dados['pessoas_arena']} pessoas × 10pts = <span class='badge bg-danger'>{pts} pontos</span>")
             
+            if dados['pessoas_novas_arena'] > 0:
+                pts = dados['pessoas_novas_arena'] * 15
+                detalhes_pontuacao.append(f"🌟 <strong>Pessoas Novas (Arena):</strong> {dados['pessoas_novas_arena']} pessoas × 15pts = <span class='badge bg-danger'>{pts} pontos</span>")
+            
             if dados['pessoas_domingo'] > 0:
                 pts = dados['pessoas_domingo'] * 10
                 detalhes_pontuacao.append(f"⛪ <strong>Domingo:</strong> {dados['pessoas_domingo']} pessoas × 10pts = <span class='badge bg-secondary'>{pts} pontos</span>")
+            
+            if dados['pessoas_novas_domingo'] > 0:
+                pts = dados['pessoas_novas_domingo'] * 15
+                detalhes_pontuacao.append(f"🌟 <strong>Pessoas Novas (Domingo):</strong> {dados['pessoas_novas_domingo']} pessoas × 15pts = <span class='badge bg-secondary'>{pts} pontos</span>")
             
             if dados['arrecadacao'] > 0:
                 pts = dados['arrecadacao'] * 10
