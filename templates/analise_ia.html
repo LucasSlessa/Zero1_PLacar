@@ -188,16 +188,30 @@
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="tipo_analise" class="form-label">
-                            <i class="fas fa-chart-pie"></i> Tipo de Análise
-                        </label>
-                        <select class="form-select" id="tipo_analise" name="tipo_analise" required>
-                            <option value="completa">📊 Análise Completa (Individual + Comparativa)</option>
-                            <option value="individual">👤 Análise Individual por Equipe</option>
-                            <option value="comparativa">⚖️ Análise Comparativa entre Equipes</option>
-                            <option value="recomendacoes">💡 Recomendações Estratégicas</option>
-                        </select>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="tipo_placar" class="form-label">
+                                <i class="fas fa-trophy"></i> Sistema de Pontuação
+                            </label>
+                            <select class="form-select" id="tipo_placar" name="tipo_placar" required>
+                                <option value="placar1">🏆 Placar 1 - Sistema Tradicional</option>
+                                <option value="placar2">🎆 Placar 2 - Sistema de Ranking</option>
+                            </select>
+                            <small class="form-text text-muted">
+                                Placar 1: Pontuação fixa por atividade | Placar 2: Ranking comparativo
+                            </small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="tipo_analise" class="form-label">
+                                <i class="fas fa-chart-pie"></i> Tipo de Análise
+                            </label>
+                            <select class="form-select" id="tipo_analise" name="tipo_analise" required>
+                                <option value="completa">📊 Análise Completa (Individual + Comparativa)</option>
+                                <option value="individual">👤 Análise Individual por Equipe</option>
+                                <option value="comparativa">⚖️ Análise Comparativa entre Equipes</option>
+                                <option value="recomendacoes">💡 Recomendações Estratégicas</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div class="mb-3">

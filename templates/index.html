@@ -47,11 +47,28 @@
                     <div class="icon-wrapper mb-3" style="background: var(--accent-gradient); border-radius: 15px; width: 60px; height: 60px; margin: 0 auto; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 15px rgba(0, 200, 83, 0.3);">
                         <i class="fas fa-trophy" style="font-size: 1.8rem; color: white;"></i>
                     </div>
-                    <h4 class="card-title fw-bold mb-3">Ver Placar</h4>
-                    <p class="card-text" style="color: var(--text-secondary);">Acompanhe a classificação em tempo real das Divisões A e B</p>
+                    <h4 class="card-title fw-bold mb-3">Placar 1</h4>
+                    <p class="card-text" style="color: var(--text-secondary);">Sistema tradicional com pontuação fixa por atividade</p>
                 </div>
                 <a href="{{ url_for('placar') }}" class="btn btn-warning btn-lg w-100 mt-3">
                     <i class="fas fa-eye me-2"></i> Acessar
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100 text-center action-card" style="border: 2px solid #ff9800;">
+            <div class="card-body d-flex flex-column justify-content-between p-4">
+                <div>
+                    <div class="icon-wrapper mb-3" style="background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); border-radius: 15px; width: 60px; height: 60px; margin: 0 auto; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 15px rgba(255, 152, 0, 0.3);">
+                        <i class="fas fa-chart-line" style="font-size: 1.8rem; color: white;"></i>
+                    </div>
+                    <h4 class="card-title fw-bold mb-3">Placar 2 <span class="badge bg-warning text-dark">NOVO</span></h4>
+                    <p class="card-text" style="color: var(--text-secondary);">Sistema de ranking comparativo entre equipes</p>
+                </div>
+                <a href="{{ url_for('placar2') }}" class="btn btn-warning btn-lg w-100 mt-3">
+                    <i class="fas fa-chart-line me-2"></i> Ranking
                 </a>
             </div>
         </div>

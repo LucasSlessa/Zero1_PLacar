@@ -31,8 +31,16 @@ PONTUACAO_CONFIG = {
     'valor_arrecadacao': 10  # 10 pontos por real arrecadado
 }
 
+# Sistema de pontuação por ranking (Placar 2)
+PONTUACAO_RANKING = {
+    'primeiro_lugar': 5,
+    'segundo_lugar': 3,
+    'terceiro_lugar': 1,
+    'demais_posicoes': 0
+}
+
 def calcular_pontuacao(registro):
-    """Calcula a pontuação baseada nos novos critérios estabelecidos"""
+    """Calcula a pontuação baseada nos novos critérios estabelecidos (Placar 1)"""
     pontos = 0
     
     # Pessoas novas (geral)
@@ -60,6 +68,89 @@ def calcular_pontuacao(registro):
     pontos += registro.get('valor_arrecadacao_parceiro', 0) * PONTUACAO_CONFIG['valor_arrecadacao']
     
     return int(pontos)
+
+def calcular_pontuacao_ranking(registros_periodo):
+    """Calcula pontuação baseada em ranking comparativo entre equipes (Placar 2)"""
+    if not registros_periodo:
+        return {}
+    
+    # Agrupa registros por equipe
+    dados_por_equipe = {}
+    for registro in registros_periodo:
+        equipe_id = registro['equipe_id']
+        if equipe_id not in dados_por_equipe:
+            dados_por_equipe[equipe_id] = {
+                'pessoas_novas': 0,
+                'celulas_realizadas': 0,
+                'celulas_elite': 0,
+                'pessoas_terca': 0,
+                'pessoas_novas_terca': 0,
+                'pessoas_arena': 0,
+                'pessoas_novas_arena': 0,
+                'pessoas_domingo': 0,
+                'pessoas_novas_domingo': 0,
+                'valor_arrecadacao': 0,
+                'pontuacao_ranking': 0
+            }
+        
+        dados = dados_por_equipe[equipe_id]
+        dados['pessoas_novas'] += registro.get('qtd_pessoas_novas', 0)
+        dados['celulas_realizadas'] += registro.get('qtd_celulas_realizadas', 0)
+        dados['celulas_elite'] += registro.get('qtd_celulas_elite', 0)
+        dados['pessoas_terca'] += registro.get('qtd_pessoas_terca', 0)
+        dados['pessoas_novas_terca'] += registro.get('qtd_pessoas_novas_terca', 0)
+        dados['pessoas_arena'] += registro.get('qtd_pessoas_arena', 0)
+        dados['pessoas_novas_arena'] += registro.get('qtd_pessoas_novas_arena', 0)
+        dados['pessoas_domingo'] += registro.get('qtd_pessoas_domingo', 0)
+        dados['pessoas_novas_domingo'] += registro.get('qtd_pessoas_novas_domingo', 0)
+        dados['valor_arrecadacao'] += registro.get('valor_arrecadacao_parceiro', 0)
+    
+    # Lista de quesitos para ranking
+    quesitos = [
+        'pessoas_novas', 'celulas_realizadas', 'celulas_elite',
+        'pessoas_terca', 'pessoas_novas_terca', 'pessoas_arena',
+        'pessoas_novas_arena', 'pessoas_domingo', 'pessoas_novas_domingo',
+        'valor_arrecadacao'
+    ]
+    
+    # Para cada quesito, cria ranking e atribui pontos
+    for quesito in quesitos:
+        # Ordena equipes por este quesito (maior para menor)
+        ranking_quesito = sorted(
+            dados_por_equipe.items(),
+            key=lambda x: x[1][quesito],
+            reverse=True
+        )
+        
+        # Atribui pontos baseado na posição
+        posicao = 1
+        valor_anterior = None
+        
+        for equipe_id, dados in ranking_quesito:
+            valor_atual = dados[quesito]
+            
+            # Se o valor é 0, não ganha pontos
+            if valor_atual == 0:
+                continue
+                
+            # Se empatou com a posição anterior, mantém a mesma posição
+            if valor_anterior is not None and valor_atual != valor_anterior:
+                # Conta quantas equipes tiveram o valor anterior
+                equipes_valor_anterior = sum(1 for _, d in ranking_quesito if d[quesito] == valor_anterior)
+                posicao += equipes_valor_anterior
+            
+            # Atribui pontos baseado na posição
+            if posicao == 1:
+                dados_por_equipe[equipe_id]['pontuacao_ranking'] += PONTUACAO_RANKING['primeiro_lugar']
+            elif posicao == 2:
+                dados_por_equipe[equipe_id]['pontuacao_ranking'] += PONTUACAO_RANKING['segundo_lugar']
+            elif posicao == 3:
+                dados_por_equipe[equipe_id]['pontuacao_ranking'] += PONTUACAO_RANKING['terceiro_lugar']
+            # Posições 4+ não ganham pontos
+            
+            valor_anterior = valor_atual
+    
+    return dados_por_equipe
 
 def init_database():
     """Inicializa as tabelas no Supabase"""
@@ -134,7 +225,7 @@ def get_equipes(data_inicio=None, data_fim=None):
         return []
 
 def get_equipes_por_periodo(data_inicio, data_fim):
-    """Obtém equipes com pontuação calculada para um período específico"""
+    """Obtém equipes com pontuação calculada para um período específico (Placar 1)"""
     try:
         # Busca todas as equipes
         response_equipes = supabase.table('equipes').select('*').execute()
@@ -159,6 +250,143 @@ def get_equipes_por_periodo(data_inicio, data_fim):
     except Exception as e:
         print(f"Erro ao obter equipes por período: {e}")
         return []
+
+def get_equipes_por_periodo_ranking(data_inicio, data_fim):
+    """Obtém equipes com pontuação por ranking para um período específico (Placar 2)"""
+    try:
+        # Busca todas as equipes
+        response_equipes = supabase.table('equipes').select('*').execute()
+        equipes = response_equipes.data
+        
+        # Busca todos os registros do período
+        response_registros = supabase.table('registros').select('*').gte('data_inicio', data_inicio).lte('data_fim', data_fim).execute()
+        registros_periodo = response_registros.data
+        
+        # Calcula pontuação por ranking
+        dados_ranking = calcular_pontuacao_ranking(registros_periodo)
+        
+        # Adiciona dados de ranking às equipes
+        for equipe in equipes:
+            equipe_id = equipe['id']
+            if equipe_id in dados_ranking:
+                equipe['pontuacao_ranking'] = dados_ranking[equipe_id]['pontuacao_ranking']
+                equipe['dados_ranking'] = dados_ranking[equipe_id]
+            else:
+                equipe['pontuacao_ranking'] = 0
+                equipe['dados_ranking'] = {
+                    'pessoas_novas': 0, 'celulas_realizadas': 0, 'celulas_elite': 0,
+                    'pessoas_terca': 0, 'pessoas_novas_terca': 0, 'pessoas_arena': 0,
+                    'pessoas_novas_arena': 0, 'pessoas_domingo': 0, 'pessoas_novas_domingo': 0,
+                    'valor_arrecadacao': 0, 'pontuacao_ranking': 0
+                }
+        
+        # Ordena por pontuação de ranking
+        equipes.sort(key=lambda x: x.get('pontuacao_ranking', 0), reverse=True)
+        
+        return equipes
+    except Exception as e:
+        print(f"Erro ao obter equipes por período (ranking): {e}")
+        return []
+
+def get_rankings_por_quesito(data_inicio, data_fim):
+    """Obtém rankings detalhados por quesito para exibir vencedores"""
+    try:
+        # Busca todos os registros do período
+        response_registros = supabase.table('registros').select('*').gte('data_inicio', data_inicio).lte('data_fim', data_fim).execute()
+        registros_periodo = response_registros.data
+        
+        if not registros_periodo:
+            return {}
+        
+        # Busca todas as equipes
+        response_equipes = supabase.table('equipes').select('*').execute()
+        equipes = response_equipes.data
+        equipes_dict = {e['id']: e for e in equipes}
+        
+        # Agrupa registros por equipe
+        dados_por_equipe = {}
+        for registro in registros_periodo:
+            equipe_id = registro['equipe_id']
+            if equipe_id not in dados_por_equipe:
+                dados_por_equipe[equipe_id] = {
+                    'pessoas_novas': 0, 'celulas_realizadas': 0, 'celulas_elite': 0,
+                    'pessoas_terca': 0, 'pessoas_novas_terca': 0, 'pessoas_arena': 0,
+                    'pessoas_novas_arena': 0, 'pessoas_domingo': 0, 'pessoas_novas_domingo': 0,
+                    'valor_arrecadacao': 0
+                }
+            
+            dados = dados_por_equipe[equipe_id]
+            dados['pessoas_novas'] += registro.get('qtd_pessoas_novas', 0)
+            dados['celulas_realizadas'] += registro.get('qtd_celulas_realizadas', 0)
+            dados['celulas_elite'] += registro.get('qtd_celulas_elite', 0)
+            dados['pessoas_terca'] += registro.get('qtd_pessoas_terca', 0)
+            dados['pessoas_novas_terca'] += registro.get('qtd_pessoas_novas_terca', 0)
+            dados['pessoas_arena'] += registro.get('qtd_pessoas_arena', 0)
+            dados['pessoas_novas_arena'] += registro.get('qtd_pessoas_novas_arena', 0)
+            dados['pessoas_domingo'] += registro.get('qtd_pessoas_domingo', 0)
+            dados['pessoas_novas_domingo'] += registro.get('qtd_pessoas_novas_domingo', 0)
+            dados['valor_arrecadacao'] += registro.get('valor_arrecadacao_parceiro', 0)
+        
+        # Lista de quesitos para ranking
+        quesitos = [
+            ('pessoas_novas', 'Pessoas Novas', 'fas fa-user-plus', 'success'),
+            ('celulas_realizadas', 'Células Realizadas', 'fas fa-circle', 'primary'),
+            ('celulas_elite', 'Células Elite', 'fas fa-star', 'warning'),
+            ('pessoas_terca', 'Pessoas Terça', 'fas fa-calendar-day', 'info'),
+            ('pessoas_novas_terca', 'Pessoas Novas Terça', 'fas fa-user-plus', 'info'),
+            ('pessoas_arena', 'Pessoas Arena', 'fas fa-fire', 'danger'),
+            ('pessoas_novas_arena', 'Pessoas Novas Arena', 'fas fa-user-plus', 'danger'),
+            ('pessoas_domingo', 'Pessoas Domingo', 'fas fa-church', 'secondary'),
+            ('pessoas_novas_domingo', 'Pessoas Novas Domingo', 'fas fa-user-plus', 'secondary'),
+            ('valor_arrecadacao', 'Arrecadação', 'fas fa-dollar-sign', 'success')
+        ]
+        
+        rankings = {}
+        
+        # Para cada quesito, cria ranking
+        for quesito, nome, icone, cor in quesitos:
+            # Ordena equipes por este quesito (maior para menor)
+            ranking_quesito = sorted(
+                [(equipe_id, dados[quesito]) for equipe_id, dados in dados_por_equipe.items()],
+                key=lambda x: x[1],
+                reverse=True
+            )
+            
+            # Filtra apenas equipes com valor > 0
+            ranking_quesito = [(equipe_id, valor) for equipe_id, valor in ranking_quesito if valor > 0]
+            
+            if ranking_quesito:
+                # Pega os top 3
+                top_3 = ranking_quesito[:3]
+                
+                rankings[quesito] = {
+                    'nome': nome,
+                    'icone': icone,
+                    'cor': cor,
+                    'vencedores': []
+                }
+                
+                for i, (equipe_id, valor) in enumerate(top_3):
+                    equipe = equipes_dict.get(equipe_id, {'nome': 'Desconhecida', 'logo_url': ''})
+                    posicao = i + 1
+                    
+                    if quesito == 'valor_arrecadacao':
+                        valor_formatado = f"R$ {valor:.2f}"
+                    else:
+                        valor_formatado = str(int(valor))
+                    
+                    rankings[quesito]['vencedores'].append({
+                        'posicao': posicao,
+                        'equipe_nome': equipe['nome'],
+                        'equipe_logo': equipe.get('logo_url', ''),
+                        'valor': valor_formatado,
+                        'pontos': 5 if posicao == 1 else (3 if posicao == 2 else 1)
+                    })
+        
+        return rankings
+    except Exception as e:
+        print(f"Erro ao obter rankings por quesito: {e}")
+        return {}
 
 def get_equipe_by_id(equipe_id):
     """Obtém uma equipe específica pelo ID"""
@@ -329,6 +557,48 @@ def placar():
                          sem_divisoes=sem_divisoes,
                          periodo=periodo_info)
 
+@app.route('/placar2')
+def placar2():
+    """Placar com sistema de pontuação por ranking"""
+    # Verifica se há filtros de período
+    data_inicio = request.args.get('data_inicio')
+    data_fim = request.args.get('data_fim')
+    sem_divisoes = request.args.get('sem_divisoes', '0') == '1'
+    
+    # Para o Placar 2, é obrigatório ter período definido
+    if not (data_inicio and data_fim):
+        flash('O Placar 2 requer um período específico para calcular o ranking!', 'warning')
+        return render_template('placar2_periodo.html')
+    
+    # Obtém equipes com pontuação por ranking
+    equipes = get_equipes_por_periodo_ranking(data_inicio, data_fim)
+    
+    # Obtém rankings por quesito
+    rankings_quesitos = get_rankings_por_quesito(data_inicio, data_fim)
+    
+    # Adiciona divisão baseada na posição
+    for i, equipe in enumerate(equipes):
+        equipe['divisao'] = 'A' if i < 5 else 'B'
+        equipe['posicao'] = i + 1
+    
+    equipes_a = [e for e in equipes if e.get('divisao') == 'A']
+    equipes_b = [e for e in equipes if e.get('divisao') == 'B']
+    
+    # Informações do período para o template
+    periodo_info = {
+        'data_inicio': data_inicio,
+        'data_fim': data_fim,
+        'is_periodo': True
+    }
+    
+    return render_template('placar2.html', 
+                         equipes_a=equipes_a, 
+                         equipes_b=equipes_b,
+                         todas_equipes=equipes,
+                         rankings_quesitos=rankings_quesitos,
+                         sem_divisoes=sem_divisoes,
+                         periodo=periodo_info)
+
 @app.route('/cadastrar_equipe', methods=['GET', 'POST'])
 def cadastrar_equipe():
     if request.method == 'POST':
@@ -384,6 +654,14 @@ def placar_periodo():
     
     return redirect(url_for('placar', data_inicio=data_inicio, data_fim=data_fim))
 
+@app.route('/placar2_periodo', methods=['POST'])
+def placar2_periodo():
+    """Rota para filtrar placar 2 por período"""
+    data_inicio = request.form['data_inicio']
+    data_fim = request.form['data_fim']
+    
+    return redirect(url_for('placar2', data_inicio=data_inicio, data_fim=data_fim))
+
 @app.route('/relatorios')
 def relatorios():
     equipes = get_equipes()
@@ -420,10 +698,16 @@ def gerar_analise_ia():
         tipo_analise = request.form['tipo_analise']
         equipe_id = request.form.get('equipe_id')
         ocultar_posicoes = request.form.get('ocultar_posicoes') == '1'
+        tipo_placar = request.form.get('tipo_placar', 'placar1')  # placar1 ou placar2
         
         # Busca dados
         registros = get_registros_por_periodo(data_inicio, data_fim, equipe_id)
-        equipes = get_equipes()
+        
+        # Busca equipes baseado no tipo de placar
+        if tipo_placar == 'placar2':
+            equipes = get_equipes_por_periodo_ranking(data_inicio, data_fim)
+        else:
+            equipes = get_equipes(data_inicio, data_fim)
         
         if not registros:
             return jsonify({
@@ -432,7 +716,7 @@ def gerar_analise_ia():
             })
         
         # Prepara dados para análise
-        analise_html = gerar_analise_com_ia(registros, equipes, tipo_analise, data_inicio, data_fim, ocultar_posicoes)
+        analise_html = gerar_analise_com_ia(registros, equipes, tipo_analise, data_inicio, data_fim, ocultar_posicoes, tipo_placar)
         
         return jsonify({
             'success': True,
@@ -446,21 +730,34 @@ def gerar_analise_ia():
             'error': str(e)
         })
 
-def gerar_analise_com_ia(registros, equipes, tipo_analise, data_inicio, data_fim, ocultar_posicoes=False):
+def gerar_analise_com_ia(registros, equipes, tipo_analise, data_inicio, data_fim, ocultar_posicoes=False, tipo_placar='placar1'):
     """Gera análise usando IA gratuita (Groq API)"""
     
     # Agrupa dados por equipe
     dados_por_equipe = {}
+    rankings_detalhados = {}
+    
+    # Para Placar 2, obtém rankings detalhados
+    if tipo_placar == 'placar2':
+        rankings_detalhados = get_rankings_por_quesito(data_inicio, data_fim)
+    
     for registro in registros:
         equipe_id = registro['equipe_id']
         if equipe_id not in dados_por_equipe:
             equipe_info = next((e for e in equipes if e['id'] == equipe_id), None)
             equipe_nome = equipe_info['nome'] if equipe_info else 'Desconhecida'
             equipe_logo = equipe_info.get('logo_url', '') if equipe_info else ''
+            
+            # Para Placar 2, usa pontuação por ranking
+            if tipo_placar == 'placar2' and equipe_info:
+                total_pontos = equipe_info.get('pontuacao_ranking', 0)
+            else:
+                total_pontos = 0
+            
             dados_por_equipe[equipe_id] = {
                 'nome': equipe_nome,
                 'logo_url': equipe_logo,
-                'total_pontos': 0,
+                'total_pontos': total_pontos,
                 'pessoas_novas': 0,
                 'pessoas_novas_terca': 0,
                 'pessoas_novas_arena': 0,
@@ -471,11 +768,16 @@ def gerar_analise_com_ia(registros, equipes, tipo_analise, data_inicio, data_fim
                 'pessoas_arena': 0,
                 'pessoas_domingo': 0,
                 'arrecadacao': 0,
-                'registros_count': 0
+                'registros_count': 0,
+                'vitorias_ranking': []  # Para armazenar em que quesitos a equipe venceu
             }
         
         dados = dados_por_equipe[equipe_id]
-        dados['total_pontos'] += registro.get('pontuacao', 0)
+        
+        # Para Placar 1, soma pontuação dos registros
+        if tipo_placar == 'placar1':
+            dados['total_pontos'] += registro.get('pontuacao', 0)
+        
         dados['pessoas_novas'] += registro.get('qtd_pessoas_novas', 0)
         dados['pessoas_novas_terca'] += registro.get('qtd_pessoas_novas_terca', 0)
         dados['pessoas_novas_arena'] += registro.get('qtd_pessoas_novas_arena', 0)
@@ -488,17 +790,36 @@ def gerar_analise_com_ia(registros, equipes, tipo_analise, data_inicio, data_fim
         dados['arrecadacao'] += registro.get('valor_arrecadacao_parceiro', 0)
         dados['registros_count'] += 1
     
+    # Para Placar 2, identifica vitórias de cada equipe
+    if tipo_placar == 'placar2' and rankings_detalhados:
+        for equipe_id, dados in dados_por_equipe.items():
+            vitorias = []
+            for quesito, ranking_info in rankings_detalhados.items():
+                for vencedor in ranking_info['vencedores']:
+                    if vencedor['equipe_nome'] == dados['nome']:
+                        vitorias.append({
+                            'quesito': ranking_info['nome'],
+                            'posicao': vencedor['posicao'],
+                            'valor': vencedor['valor'],
+                            'pontos': vencedor['pontos'],
+                            'icone': ranking_info['icone']
+                        })
+            dados['vitorias_ranking'] = vitorias
+    
     # Gera análise sem IA externa (local)
-    html = gerar_analise_local(dados_por_equipe, tipo_analise, data_inicio, data_fim, ocultar_posicoes)
+    html = gerar_analise_local(dados_por_equipe, tipo_analise, data_inicio, data_fim, ocultar_posicoes, tipo_placar)
     
     return html
 
-def gerar_analise_local(dados_por_equipe, tipo_analise, data_inicio, data_fim, ocultar_posicoes=False):
+def gerar_analise_local(dados_por_equipe, tipo_analise, data_inicio, data_fim, ocultar_posicoes=False, tipo_placar='placar1'):
     """Gera análise inteligente local (sem API externa)"""
+    
+    sistema_pontuacao = "Sistema de Ranking (Placar 2)" if tipo_placar == 'placar2' else "Sistema Tradicional (Placar 1)"
     
     html = f"""
     <div class="alert alert-info">
         <i class="fas fa-calendar"></i> Período: <strong>{data_inicio}</strong> até <strong>{data_fim}</strong>
+        <div class="mt-2"><i class="fas fa-trophy"></i> <strong>{sistema_pontuacao}</strong></div>
         {('<div class="mt-2"><i class="fas fa-eye-slash"></i> <strong>Modo Surpresa Ativado</strong> - Posições ocultas</div>' if ocultar_posicoes else '')}
     </div>
     """
@@ -568,54 +889,118 @@ def gerar_analise_local(dados_por_equipe, tipo_analise, data_inicio, data_fim, o
                     explicacao_posicao = f"🎯 <strong>Divisão B</strong> - Posição <strong>{posicao}º</strong> com <strong>{dados['total_pontos']} pontos</strong>. Faltam apenas <strong>{diff_para_top5} pontos</strong> para alcançar a Divisão A!"
             
             # Detalhamento da pontuação
-            if dados['pessoas_novas'] > 0:
-                pts = dados['pessoas_novas'] * 10
-                detalhes_pontuacao.append(f"👥 <strong>Pessoas Novas:</strong> {dados['pessoas_novas']} pessoas × 10pts = <span class='badge bg-success'>{pts} pontos</span>")
-            
-            if dados['celulas_realizadas'] > 0:
-                pts = dados['celulas_realizadas'] * 10
-                detalhes_pontuacao.append(f"⚪ <strong>Células Realizadas:</strong> {dados['celulas_realizadas']} células × 10pts = <span class='badge bg-primary'>{pts} pontos</span>")
-            
-            if dados['celulas_elite'] > 0:
-                pts = dados['celulas_elite'] * 10
-                detalhes_pontuacao.append(f"⭐ <strong>Células Elite:</strong> {dados['celulas_elite']} células × 10pts = <span class='badge bg-warning'>{pts} pontos</span>")
-            
-            if dados['pessoas_terca'] > 0:
-                pts = dados['pessoas_terca'] * 10
-                detalhes_pontuacao.append(f"🗓️ <strong>Terça-feira:</strong> {dados['pessoas_terca']} pessoas × 10pts = <span class='badge bg-info'>{pts} pontos</span>")
-            
-            if dados['pessoas_novas_terca'] > 0:
-                pts = dados['pessoas_novas_terca'] * 15
-                detalhes_pontuacao.append(f"🌟 <strong>Pessoas Novas (Terça):</strong> {dados['pessoas_novas_terca']} pessoas × 15pts = <span class='badge bg-info'>{pts} pontos</span>")
-            
-            if dados['pessoas_arena'] > 0:
-                pts = dados['pessoas_arena'] * 10
-                detalhes_pontuacao.append(f"🔥 <strong>Arena:</strong> {dados['pessoas_arena']} pessoas × 10pts = <span class='badge bg-danger'>{pts} pontos</span>")
-            
-            if dados['pessoas_novas_arena'] > 0:
-                pts = dados['pessoas_novas_arena'] * 15
-                detalhes_pontuacao.append(f"🌟 <strong>Pessoas Novas (Arena):</strong> {dados['pessoas_novas_arena']} pessoas × 15pts = <span class='badge bg-danger'>{pts} pontos</span>")
-            
-            if dados['pessoas_domingo'] > 0:
-                pts = dados['pessoas_domingo'] * 10
-                detalhes_pontuacao.append(f"⛪ <strong>Domingo:</strong> {dados['pessoas_domingo']} pessoas × 10pts = <span class='badge bg-secondary'>{pts} pontos</span>")
-            
-            if dados['pessoas_novas_domingo'] > 0:
-                pts = dados['pessoas_novas_domingo'] * 15
-                detalhes_pontuacao.append(f"🌟 <strong>Pessoas Novas (Domingo):</strong> {dados['pessoas_novas_domingo']} pessoas × 15pts = <span class='badge bg-secondary'>{pts} pontos</span>")
-            
-            if dados['arrecadacao'] > 0:
-                pts = dados['arrecadacao'] * 10
-                detalhes_pontuacao.append(f"💰 <strong>Parceiro de Deus:</strong> R$ {dados['arrecadacao']:.2f} × 10pts = <span class='badge bg-success'>{int(pts)} pontos</span>")
+            if tipo_placar == 'placar2':
+                # Para Placar 2, mostra vitórias específicas no ranking
+                if dados.get('vitorias_ranking'):
+                    detalhes_pontuacao.append(f"🏆 <strong>Vitórias no Ranking:</strong>")
+                    for vitoria in dados['vitorias_ranking']:
+                        if vitoria['posicao'] == 1:
+                            medal = '🥇'
+                            cor = 'warning'
+                        elif vitoria['posicao'] == 2:
+                            medal = '🥈'
+                            cor = 'secondary'
+                        else:
+                            medal = '🥉'
+                            cor = 'info'
+                        
+                        detalhes_pontuacao.append(
+                            f"<i class='{vitoria['icone']} text-{cor}'></i> <strong>{vitoria['quesito']}:</strong> "
+                            f"{medal} {vitoria['posicao']}º lugar com {vitoria['valor']} = "
+                            f"<span class='badge bg-{cor}'>{vitoria['pontos']} pontos</span>"
+                        )
+                else:
+                    # Mostra resultados sem vitórias
+                    quesitos_ranking = [
+                        ('pessoas_novas', 'Pessoas Novas', '👥'),
+                        ('celulas_realizadas', 'Células Realizadas', '⚪'),
+                        ('celulas_elite', 'Células Elite', '⭐'),
+                        ('pessoas_terca', 'Pessoas Terça', '🗺️'),
+                        ('pessoas_novas_terca', 'Pessoas Novas Terça', '🌟'),
+                        ('pessoas_arena', 'Pessoas Arena', '🔥'),
+                        ('pessoas_novas_arena', 'Pessoas Novas Arena', '🌟'),
+                        ('pessoas_domingo', 'Pessoas Domingo', '⛪'),
+                        ('pessoas_novas_domingo', 'Pessoas Novas Domingo', '🌟'),
+                        ('arrecadacao', 'Arrecadação', '💰')
+                    ]
+                    
+                    for quesito, nome_quesito, emoji in quesitos_ranking:
+                        valor = dados.get(quesito, 0)
+                        if valor > 0:
+                            if quesito == 'arrecadacao':
+                                valor_fmt = f"R$ {valor:.2f}"
+                            else:
+                                valor_fmt = str(int(valor))
+                            
+                            detalhes_pontuacao.append(f"{emoji} <strong>{nome_quesito}:</strong> {valor_fmt} <span class='badge bg-light text-dark'>Sem posição no top 3</span>")
+                
+                if dados['total_pontos'] > 0:
+                    detalhes_pontuacao.append(f"🏆 <strong>Total por Ranking:</strong> <span class='badge bg-warning text-dark'>{dados['total_pontos']} pontos</span>")
+            else:
+                # Para Placar 1, mostra pontuação tradicional
+                if dados['pessoas_novas'] > 0:
+                    pts = dados['pessoas_novas'] * 10
+                    detalhes_pontuacao.append(f"👥 <strong>Pessoas Novas:</strong> {dados['pessoas_novas']} pessoas × 10pts = <span class='badge bg-success'>{pts} pontos</span>")
+                
+                if dados['celulas_realizadas'] > 0:
+                    pts = dados['celulas_realizadas'] * 10
+                    detalhes_pontuacao.append(f"⚪ <strong>Células Realizadas:</strong> {dados['celulas_realizadas']} células × 10pts = <span class='badge bg-primary'>{pts} pontos</span>")
+                
+                if dados['celulas_elite'] > 0:
+                    pts = dados['celulas_elite'] * 10
+                    detalhes_pontuacao.append(f"⭐ <strong>Células Elite:</strong> {dados['celulas_elite']} células × 10pts = <span class='badge bg-warning'>{pts} pontos</span>")
+                
+                if dados['pessoas_terca'] > 0:
+                    pts = dados['pessoas_terca'] * 10
+                    detalhes_pontuacao.append(f"🗺️ <strong>Terça-feira:</strong> {dados['pessoas_terca']} pessoas × 10pts = <span class='badge bg-info'>{pts} pontos</span>")
+                
+                if dados['pessoas_novas_terca'] > 0:
+                    pts = dados['pessoas_novas_terca'] * 15
+                    detalhes_pontuacao.append(f"🌟 <strong>Pessoas Novas (Terça):</strong> {dados['pessoas_novas_terca']} pessoas × 15pts = <span class='badge bg-info'>{pts} pontos</span>")
+                
+                if dados['pessoas_arena'] > 0:
+                    pts = dados['pessoas_arena'] * 10
+                    detalhes_pontuacao.append(f"🔥 <strong>Arena:</strong> {dados['pessoas_arena']} pessoas × 10pts = <span class='badge bg-danger'>{pts} pontos</span>")
+                
+                if dados['pessoas_novas_arena'] > 0:
+                    pts = dados['pessoas_novas_arena'] * 15
+                    detalhes_pontuacao.append(f"🌟 <strong>Pessoas Novas (Arena):</strong> {dados['pessoas_novas_arena']} pessoas × 15pts = <span class='badge bg-danger'>{pts} pontos</span>")
+                
+                if dados['pessoas_domingo'] > 0:
+                    pts = dados['pessoas_domingo'] * 10
+                    detalhes_pontuacao.append(f"⛪ <strong>Domingo:</strong> {dados['pessoas_domingo']} pessoas × 10pts = <span class='badge bg-secondary'>{pts} pontos</span>")
+                
+                if dados['pessoas_novas_domingo'] > 0:
+                    pts = dados['pessoas_novas_domingo'] * 15
+                    detalhes_pontuacao.append(f"🌟 <strong>Pessoas Novas (Domingo):</strong> {dados['pessoas_novas_domingo']} pessoas × 15pts = <span class='badge bg-secondary'>{pts} pontos</span>")
+                
+                if dados['arrecadacao'] > 0:
+                    pts = dados['arrecadacao'] * 10
+                    detalhes_pontuacao.append(f"💰 <strong>Parceiro de Deus:</strong> R$ {dados['arrecadacao']:.2f} × 10pts = <span class='badge bg-success'>{int(pts)} pontos</span>")
             
             if not detalhes_pontuacao:
                 detalhes_pontuacao.append("📄 Nenhuma pontuação registrada neste período")
             
             # Análise de pontos fortes
-            if dados['pessoas_novas'] > 10:
-                pontos_fortes.append(f"🌟 <strong>Excelência em Evangelismo:</strong> {dados['pessoas_novas']} pessoas novas conquistadas - um dos melhores resultados!")
-            elif dados['pessoas_novas'] >= 5:
-                pontos_fortes.append(f"👍 <strong>Bom Evangelismo:</strong> {dados['pessoas_novas']} pessoas novas - resultado sólido")
+            if tipo_placar == 'placar2' and dados.get('vitorias_ranking'):
+                # Para Placar 2, destaca as vitórias no ranking
+                vitorias_primeiro = [v for v in dados['vitorias_ranking'] if v['posicao'] == 1]
+                vitorias_podio = [v for v in dados['vitorias_ranking'] if v['posicao'] <= 3]
+                
+                if vitorias_primeiro:
+                    quesitos_vencidos = ', '.join([v['quesito'] for v in vitorias_primeiro])
+                    pontos_fortes.append(f"🥇 <strong>Liderança Absoluta:</strong> 1º lugar em {quesitos_vencidos} - excelência comprovada!")
+                
+                if len(vitorias_podio) >= 3:
+                    pontos_fortes.append(f"🏆 <strong>Consistência no Pódio:</strong> {len(vitorias_podio)} posições no top 3 - desempenho equilibrado")
+                elif len(vitorias_podio) >= 1:
+                    pontos_fortes.append(f"⭐ <strong>Destaque em Áreas Específicas:</strong> {len(vitorias_podio)} posição(es) no pódio")
+            else:
+                # Análise tradicional para Placar 1
+                if dados['pessoas_novas'] > 10:
+                    pontos_fortes.append(f"🌟 <strong>Excelência em Evangelismo:</strong> {dados['pessoas_novas']} pessoas novas conquistadas - um dos melhores resultados!")
+                elif dados['pessoas_novas'] >= 5:
+                    pontos_fortes.append(f"👍 <strong>Bom Evangelismo:</strong> {dados['pessoas_novas']} pessoas novas - resultado sólido")
             
             if dados['celulas_elite'] > 5:
                 pontos_fortes.append(f"⭐ <strong>Destaque em Células Elite:</strong> {dados['celulas_elite']} células elite mostram compromisso com excelência")

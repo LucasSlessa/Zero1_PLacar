@@ -48,6 +48,32 @@
         .navbar {
             flex-shrink: 0;
         }
+        
+        /* Garante funcionamento do dropdown */
+        .dropdown-menu {
+            z-index: 1050;
+        }
+        
+        .dropdown-item {
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+        }
+        
+        .dropdown-item:hover {
+            background-color: #f8f9fa;
+            text-decoration: none;
+        }
+        
+        .dropdown-toggle::after {
+            margin-left: 0.5rem;
+        }
+        
+        /* Fallback hover para desktop */
+        @media (min-width: 992px) {
+            .dropdown:hover .dropdown-menu {
+                display: block;
+            }
+        }
     </style>
 </head>
 <body>
@@ -66,10 +92,19 @@
                             <i class="fas fa-home"></i> Início
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('placar') }}">
-                            <i class="fas fa-trophy"></i> Placar
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="placarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="true">
+                            <i class="fas fa-trophy"></i> Placares
                         </a>
+                        <div class="dropdown-menu" aria-labelledby="placarDropdown">
+                            <a class="dropdown-item" href="{{ url_for('placar') }}">
+                                <i class="fas fa-trophy text-success me-2"></i> Placar 1 - Tradicional
+                            </a>
+                            <a class="dropdown-item" href="{{ url_for('placar2') }}">
+                                <i class="fas fa-chart-line text-warning me-2"></i> Placar 2 - Ranking
+                                <span class="badge bg-warning text-dark ms-2">NOVO</span>
+                            </a>
+                        </div>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('registrar_atividade') }}">
@@ -132,7 +167,13 @@
                     <ul class="list-unstyled" style="font-size: 0.9rem;">
                         <li class="mb-2">
                             <a href="{{ url_for('placar') }}" class="text-white text-decoration-none" style="opacity: 0.9;">
-                                <i class="fas fa-trophy me-2"></i> Placar
+                                <i class="fas fa-trophy me-2"></i> Placar 1
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="{{ url_for('placar2') }}" class="text-white text-decoration-none" style="opacity: 0.9;">
+                                <i class="fas fa-ranking-star me-2"></i> Placar 2
+                                <span class="badge bg-warning text-dark ms-1" style="font-size: 0.7rem;">NOVO</span>
                             </a>
                         </li>
                         <li class="mb-2">
@@ -173,5 +214,58 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    
+    <!-- Script para garantir funcionamento do dropdown -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicializa dropdowns do Bootstrap
+        var dropdownElementList = [].slice.call(document.querySelectorAll('.dropdown-toggle'));
+        var dropdownList = dropdownElementList.map(function (dropdownToggleEl) {
+            return new bootstrap.Dropdown(dropdownToggleEl);
+        });
+        
+        // Garante que os links do dropdown funcionem
+        document.querySelectorAll('.dropdown-item').forEach(function(item) {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Navega para o link
+                const href = this.getAttribute('href');
+                if (href && href !== '#') {
+                    window.location.href = href;
+                }
+            });
+        });
+        
+        // Alternativa: clique direto no dropdown toggle para mostrar/esconder
+        document.querySelectorAll('.dropdown-toggle').forEach(function(toggle) {
+            toggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                const dropdownMenu = this.nextElementSibling;
+                
+                // Toggle da visibilidade
+                if (dropdownMenu.classList.contains('show')) {
+                    dropdownMenu.classList.remove('show');
+                } else {
+                    // Fecha outros dropdowns
+                    document.querySelectorAll('.dropdown-menu.show').forEach(function(menu) {
+                        menu.classList.remove('show');
+                    });
+                    dropdownMenu.classList.add('show');
+                }
+            });
+        });
+        
+        // Fecha dropdown ao clicar fora
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.dropdown')) {
+                document.querySelectorAll('.dropdown-menu.show').forEach(function(menu) {
+                    menu.classList.remove('show');
+                });
+            }
+        });
+    });
+    </script>
 </body>
 </html>

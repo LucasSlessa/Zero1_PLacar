@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}Placar 2 - Definir Período{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow">
+                <div class="card-header bg-warning text-dark text-center">
+                    <h3 class="mb-0">
+                        <i class="fas fa-ranking-star me-2"></i>
+                        Placar 2 - Sistema de Ranking
+                    </h3>
+                </div>
+                <div class="card-body p-4">
+                    <!-- Explicação do Sistema -->
+                    <div class="alert alert-info mb-4">
+                        <h5 class="alert-heading">
+                            <i class="fas fa-info-circle"></i> 
+                            Como funciona o Placar 2?
+                        </h5>
+                        <p class="mb-2">
+                            O <strong>Placar 2</strong> usa um sistema de <strong>ranking comparativo</strong> entre equipes:
+                        </p>
+                        <ul class="mb-2">
+                            <li>Cada quesito (pessoas novas, células, arena, etc.) é comparado entre todas as equipes</li>
+                            <li>Isso gera um ranking do 1º ao último lugar para cada quesito</li>
+                            <li>A pontuação é distribuída baseada na posição no ranking:</li>
+                        </ul>
+                        <div class="d-flex gap-2 flex-wrap justify-content-center">
+                            <span class="badge bg-warning text-dark fs-6">1º lugar = 5 pontos</span>
+                            <span class="badge bg-info fs-6">2º lugar = 3 pontos</span>
+                            <span class="badge bg-secondary fs-6">3º lugar = 1 ponto</span>
+                            <span class="badge bg-light text-dark fs-6">4º+ = 0 pontos</span>
+                        </div>
+                        <p class="mt-2 mb-0">
+                            <strong>Importante:</strong> Em caso de empate, as equipes empatadas recebem a mesma pontuação.
+                        </p>
+                    </div>
+
+                    <!-- Formulário de Período -->
+                    <form method="POST" action="{{ url_for('placar2_periodo') }}">
+                        <h5 class="mb-3 text-center">
+                            <i class="fas fa-calendar-alt text-warning"></i>
+                            Selecione o Período para Análise
+                        </h5>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="data_inicio" class="form-label">
+                                    <i class="fas fa-calendar-day"></i> Data de Início
+                                </label>
+                                <input type="date" class="form-control" id="data_inicio" name="data_inicio" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="data_fim" class="form-label">
+                                    <i class="fas fa-calendar-check"></i> Data de Fim
+                                </label>
+                                <input type="date" class="form-control" id="data_fim" name="data_fim" required>
+                            </div>
+                        </div>
+
+                        <!-- Botões de Período Rápido -->
+                        <div class="mb-4">
+                            <h6 class="text-muted mb-2">Períodos Rápidos:</h6>
+                            <div class="d-flex gap-2 flex-wrap justify-content-center">
+                                <button type="button" class="btn btn-outline-success btn-sm" onclick="setEsteMes()">
+                                    <i class="fas fa-calendar-day"></i> Este Mês
+                                </button>
+                                <button type="button" class="btn btn-outline-info btn-sm" onclick="setMesPassado()">
+                                    <i class="fas fa-calendar-minus"></i> Mês Passado
+                                </button>
+                                <button type="button" class="btn btn-outline-warning btn-sm" onclick="setEsteAno()">
+                                    <i class="fas fa-calendar"></i> Este Ano
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setUltimos30Dias()">
+                                    <i class="fas fa-clock"></i> Últimos 30 dias
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Botões de Ação -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-warning btn-lg">
+                                <i class="fas fa-chart-line me-2"></i>
+                                Gerar Placar 2
+                            </button>
+                            <a href="{{ url_for('placar') }}" class="btn btn-outline-success">
+                                <i class="fas fa-arrow-left me-2"></i>
+                                Voltar ao Placar 1
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Card de Comparação -->
+            <div class="card mt-4 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-balance-scale text-info"></i>
+                        Diferenças entre Placar 1 e Placar 2
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-success">
+                                <i class="fas fa-trophy"></i> Placar 1 (Tradicional)
+                            </h6>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-check text-success"></i> Pontuação fixa por atividade</li>
+                                <li><i class="fas fa-check text-success"></i> 10 pontos por pessoa nova</li>
+                                <li><i class="fas fa-check text-success"></i> 10 pontos por célula realizada</li>
+                                <li><i class="fas fa-check text-success"></i> Acumula pontos ao longo do tempo</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-warning">
+                                <i class="fas fa-ranking-star"></i> Placar 2 (Ranking)
+                            </h6>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-star text-warning"></i> Pontuação baseada em posição</li>
+                                <li><i class="fas fa-star text-warning"></i> Compara desempenho entre equipes</li>
+                                <li><i class="fas fa-star text-warning"></i> Premia os melhores em cada área</li>
+                                <li><i class="fas fa-star text-warning"></i> Análise por período específico</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function setEsteMes() {
+    const hoje = new Date();
+    const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+    const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+    
+    document.getElementById('data_inicio').value = inicioMes.toISOString().split('T')[0];
+    document.getElementById('data_fim').value = fimMes.toISOString().split('T')[0];
+}
+
+function setMesPassado() {
+    const hoje = new Date();
+    const inicioMesPassado = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
+    const fimMesPassado = new Date(hoje.getFullYear(), hoje.getMonth(), 0);
+    
+    document.getElementById('data_inicio').value = inicioMesPassado.toISOString().split('T')[0];
+    document.getElementById('data_fim').value = fimMesPassado.toISOString().split('T')[0];
+}
+
+function setEsteAno() {
+    const hoje = new Date();
+    const inicioAno = new Date(hoje.getFullYear(), 0, 1);
+    const fimAno = new Date(hoje.getFullYear(), 11, 31);
+    
+    document.getElementById('data_inicio').value = inicioAno.toISOString().split('T')[0];
+    document.getElementById('data_fim').value = fimAno.toISOString().split('T')[0];
+}
+
+function setUltimos30Dias() {
+    const hoje = new Date();
+    const inicio = new Date(hoje);
+    inicio.setDate(hoje.getDate() - 30);
+    
+    document.getElementById('data_inicio').value = inicio.toISOString().split('T')[0];
+    document.getElementById('data_fim').value = hoje.toISOString().split('T')[0];
+}
+
+// Define data padrão como este mês
+document.addEventListener('DOMContentLoaded', function() {
+    setEsteMes();
+});
+</script>
+{% endblock %}
