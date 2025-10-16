@@ -52,27 +52,52 @@
         /* Garante funcionamento do dropdown */
         .dropdown-menu {
             z-index: 1050;
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            min-width: 200px;
+            background-color: #fff;
+            border: 1px solid rgba(0,0,0,.15);
+            border-radius: 0.375rem;
+            box-shadow: 0 0.5rem 1rem rgba(0,0,0,.175);
+        }
+        
+        .dropdown-menu.show {
+            display: block !important;
         }
         
         .dropdown-item {
             cursor: pointer;
             padding: 0.5rem 1rem;
+            color: #212529;
+            text-decoration: none;
+            display: block;
+            width: 100%;
+            clear: both;
+            font-weight: 400;
+            border: 0;
+            background-color: transparent;
         }
         
-        .dropdown-item:hover {
-            background-color: #f8f9fa;
+        .dropdown-item:hover,
+        .dropdown-item:focus {
+            background-color: #e9ecef;
+            color: #1e2125;
             text-decoration: none;
+        }
+        
+        .dropdown-toggle {
+            cursor: pointer;
         }
         
         .dropdown-toggle::after {
             margin-left: 0.5rem;
         }
         
-        /* Fallback hover para desktop */
-        @media (min-width: 992px) {
-            .dropdown:hover .dropdown-menu {
-                display: block;
-            }
+        /* Garantir que o dropdown seja clicável */
+        .dropdown {
+            position: relative;
         }
     </style>
 </head>
@@ -93,18 +118,26 @@
                         </a>
                     </li>
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="placarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="true">
+                        <a class="nav-link dropdown-toggle" href="#" id="placarDropdown" role="button" 
+                           data-bs-toggle="dropdown" aria-expanded="false" 
+                           onclick="toggleDropdown(event)">
                             <i class="fas fa-trophy"></i> Placares
                         </a>
-                        <div class="dropdown-menu" aria-labelledby="placarDropdown">
-                            <a class="dropdown-item" href="{{ url_for('placar') }}">
-                                <i class="fas fa-trophy text-success me-2"></i> Placar 1 - Tradicional
-                            </a>
-                            <a class="dropdown-item" href="{{ url_for('placar2') }}">
-                                <i class="fas fa-chart-line text-warning me-2"></i> Placar 2 - Ranking
-                                <span class="badge bg-warning text-dark ms-2">NOVO</span>
-                            </a>
-                        </div>
+                        <ul class="dropdown-menu" aria-labelledby="placarDropdown" id="placarDropdownMenu">
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('placar') }}" 
+                                   onclick="navegarPara('{{ url_for('placar') }}', event)">
+                                    <i class="fas fa-trophy text-success me-2"></i> Placar 1 - Tradicional
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('placar2') }}" 
+                                   onclick="navegarPara('{{ url_for('placar2') }}', event)">
+                                    <i class="fas fa-chart-line text-warning me-2"></i> Placar 2 - Ranking
+                                    <span class="badge bg-warning text-dark ms-2">NOVO</span>
+                                </a>
+                            </li>
+                        </ul>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('registrar_atividade') }}">
@@ -217,54 +250,57 @@
     
     <!-- Script para garantir funcionamento do dropdown -->
     <script>
+    // Variável para controlar estado do dropdown
+    let dropdownAberto = false;
+    
+    function toggleDropdown(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        const dropdownMenu = document.getElementById('placarDropdownMenu');
+        
+        if (dropdownAberto) {
+            // Fechar dropdown
+            dropdownMenu.classList.remove('show');
+            dropdownAberto = false;
+        } else {
+            // Abrir dropdown
+            dropdownMenu.classList.add('show');
+            dropdownAberto = true;
+        }
+        
+        console.log('Dropdown toggled:', dropdownAberto);
+    }
+    
+    function navegarPara(url, event) {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        console.log('Navegando para:', url);
+        
+        // Fechar dropdown
+        const dropdownMenu = document.getElementById('placarDropdownMenu');
+        dropdownMenu.classList.remove('show');
+        dropdownAberto = false;
+        
+        // Navegar
+        window.location.href = url;
+    }
+    
+    // Fechar dropdown ao clicar fora
+    document.addEventListener('click', function(event) {
+        const dropdown = document.getElementById('placarDropdown');
+        const dropdownMenu = document.getElementById('placarDropdownMenu');
+        
+        if (!dropdown.contains(event.target) && !dropdownMenu.contains(event.target)) {
+            dropdownMenu.classList.remove('show');
+            dropdownAberto = false;
+        }
+    });
+    
+    // Inicialização quando DOM carrega
     document.addEventListener('DOMContentLoaded', function() {
-        // Inicializa dropdowns do Bootstrap
-        var dropdownElementList = [].slice.call(document.querySelectorAll('.dropdown-toggle'));
-        var dropdownList = dropdownElementList.map(function (dropdownToggleEl) {
-            return new bootstrap.Dropdown(dropdownToggleEl);
-        });
-        
-        // Garante que os links do dropdown funcionem
-        document.querySelectorAll('.dropdown-item').forEach(function(item) {
-            item.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                // Navega para o link
-                const href = this.getAttribute('href');
-                if (href && href !== '#') {
-                    window.location.href = href;
-                }
-            });
-        });
-        
-        // Alternativa: clique direto no dropdown toggle para mostrar/esconder
-        document.querySelectorAll('.dropdown-toggle').forEach(function(toggle) {
-            toggle.addEventListener('click', function(e) {
-                e.preventDefault();
-                const dropdownMenu = this.nextElementSibling;
-                
-                // Toggle da visibilidade
-                if (dropdownMenu.classList.contains('show')) {
-                    dropdownMenu.classList.remove('show');
-                } else {
-                    // Fecha outros dropdowns
-                    document.querySelectorAll('.dropdown-menu.show').forEach(function(menu) {
-                        menu.classList.remove('show');
-                    });
-                    dropdownMenu.classList.add('show');
-                }
-            });
-        });
-        
-        // Fecha dropdown ao clicar fora
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.dropdown')) {
-                document.querySelectorAll('.dropdown-menu.show').forEach(function(menu) {
-                    menu.classList.remove('show');
-                });
-            }
-        });
+        console.log('Dropdown system initialized');
     });
     </script>
 </body>

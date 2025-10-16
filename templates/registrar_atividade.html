@@ -22,10 +22,10 @@
                             <label for="equipe_id" class="form-label">
                                 <i class="fas fa-users"></i> Equipe
                             </label>
-                            <select class="form-select" id="equipe_id" name="equipe_id" required>
-                                <option value="">Selecione uma equipe</option>
+                            <select class="form-select" id="equipe_id" name="equipe_id" required style="background-color: #fff; color: #333;">
+                                <option value="" style="background-color: #f8f9fa; color: #6c757d;">Selecione uma equipe</option>
                                 {% for equipe in equipes %}
-                                    <option value="{{ equipe.id }}">{{ equipe.nome }}</option>
+                                    <option value="{{ equipe.id }}" style="background-color: #fff; color: #333;">{{ equipe.nome }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -165,6 +165,14 @@
                             <input type="number" class="form-control" id="valor_arrecadacao_parceiro" name="valor_arrecadacao_parceiro" 
                                    min="0" step="0.01" value="0" onchange="calcularPontuacao()">
                         </div>
+                        <div class="col-md-6">
+                            <label for="qtd_revisao_vidas" class="form-label">
+                                <i class="fas fa-heart text-warning"></i> Quantidade Revisão de Vidas
+                                <small class="text-muted">(10 pontos cada)</small>
+                            </label>
+                            <input type="number" class="form-control" id="qtd_revisao_vidas" name="qtd_revisao_vidas" 
+                                   min="0" value="0" onchange="calcularPontuacao()">
+                        </div>
                     </div>
 
                     <hr>
@@ -193,6 +201,66 @@
         </div>
     </div>
 </div>
+
+<style>
+/* Melhorar aparência do dropdown de equipes */
+#equipe_id {
+    background-color: #ffffff !important;
+    color: #333333 !important;
+    border: 1px solid #ced4da;
+}
+
+#equipe_id:focus {
+    border-color: #28a745;
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+}
+
+#equipe_id option {
+    background-color: #ffffff !important;
+    color: #333333 !important;
+    padding: 8px 12px;
+}
+
+#equipe_id option:first-child {
+    background-color: #f8f9fa !important;
+    color: #6c757d !important;
+    font-style: italic;
+}
+
+#equipe_id option:hover {
+    background-color: #e9ecef !important;
+}
+
+/* Melhorar contraste geral dos form-controls */
+.form-control, .form-select {
+    background-color: #ffffff;
+    color: #333333;
+    border: 1px solid #ced4da;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #28a745;
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+}
+
+/* Força cores específicas para o dropdown de equipes */
+select#equipe_id {
+    background-color: #ffffff !important;
+    color: #212529 !important;
+    font-weight: 500;
+}
+
+select#equipe_id option {
+    background-color: #ffffff !important;
+    color: #212529 !important;
+}
+
+select#equipe_id option[value=""] {
+    background-color: #f8f9fa !important;
+    color: #6c757d !important;
+    font-style: italic;
+}
+</style>
 
 <script>
 function calcularPontuacao() {
@@ -231,6 +299,10 @@ function calcularPontuacao() {
     // Parceiro de Deus
     const valorArrecadacao = parseFloat(document.getElementById('valor_arrecadacao_parceiro').value) || 0;
     pontos += valorArrecadacao * 10;
+    
+    // Revisão de Vidas
+    const revisaoVidas = parseInt(document.getElementById('qtd_revisao_vidas').value) || 0;
+    pontos += revisaoVidas * 10;
     
     document.getElementById('pontuacao_estimada').textContent = Math.round(pontos);
 }

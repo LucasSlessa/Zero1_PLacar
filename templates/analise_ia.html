@@ -325,7 +325,11 @@ document.getElementById('formAnalise').addEventListener('submit', function(e) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
+            // Inserir conteúdo da análise
             document.getElementById('conteudoAnalise').innerHTML = data.html;
+            
+            // Adicionar botão para ir ao placar
+            adicionarBotaoPlacar();
         } else {
             document.getElementById('conteudoAnalise').innerHTML = `
                 <div class="alert alert-danger">
@@ -356,6 +360,68 @@ umMesAtras.setMonth(umMesAtras.getMonth() - 1);
 
 document.getElementById('data_fim').valueAsDate = hoje;
 document.getElementById('data_inicio').valueAsDate = umMesAtras;
+
+// Função para adicionar botão do placar
+function adicionarBotaoPlacar() {
+    const conteudoAnalise = document.getElementById('conteudoAnalise');
+    
+    // Obter dados do formulário
+    const tipoPlacar = document.getElementById('tipo_placar').value;
+    const dataInicio = document.getElementById('data_inicio').value;
+    const dataFim = document.getElementById('data_fim').value;
+    
+    // Determinar URL e texto do botão
+    let urlPlacar = '';
+    let textoBotao = '';
+    let iconeBotao = '';
+    let corBotao = '';
+    
+    if (tipoPlacar === 'placar1') {
+        urlPlacar = `{{ url_for('placar') }}?data_inicio=${dataInicio}&data_fim=${dataFim}`;
+        textoBotao = 'Ver Placar 1 - Tradicional';
+        iconeBotao = 'fas fa-trophy';
+        corBotao = 'btn-success';
+    } else {
+        urlPlacar = `{{ url_for('placar2') }}?data_inicio=${dataInicio}&data_fim=${dataFim}`;
+        textoBotao = 'Ver Placar 2 - Ranking';
+        iconeBotao = 'fas fa-chart-line';
+        corBotao = 'btn-warning';
+    }
+    
+    // Criar HTML do botão
+    const botaoHtml = `
+        <div class="text-center mt-4 pt-3" style="border-top: 2px dashed #dee2e6;">
+            <div class="mb-3">
+                <h6 class="text-muted">
+                    <i class="fas fa-external-link-alt"></i> 
+                    Quer ver os resultados completos?
+                </h6>
+            </div>
+            <a href="${urlPlacar}" class="btn ${corBotao} btn-lg" target="_blank">
+                <i class="${iconeBotao} me-2"></i>
+                ${textoBotao}
+                <small class="d-block mt-1">
+                    📅 Período: ${formatarData(dataInicio)} a ${formatarData(dataFim)}
+                </small>
+            </a>
+            <div class="mt-2">
+                <small class="text-muted">
+                    <i class="fas fa-info-circle"></i>
+                    Abrirá em nova aba com os filtros já configurados
+                </small>
+            </div>
+        </div>
+    `;
+    
+    // Adicionar botão ao final do conteúdo
+    conteudoAnalise.insertAdjacentHTML('beforeend', botaoHtml);
+}
+
+// Função auxiliar para formatar data
+function formatarData(dataString) {
+    const data = new Date(dataString + 'T00:00:00');
+    return data.toLocaleDateString('pt-BR');
+}
 
 // Função auxiliar para decodificar HTML entities
 function decodeHtmlEntities(text) {

@@ -484,82 +484,110 @@ function filtrarEsteAno() {
 }
 
 // Dados das equipes disponíveis globalmente
-const equipesData = JSON.parse('{{ todas_equipes | tojson | safe }}');
+try {
+    window.equipesData = JSON.parse('{{ todas_equipes | tojson | safe }}');
+    console.log('Dados das equipes carregados:', window.equipesData.length, 'equipes');
+} catch (error) {
+    console.error('Erro ao carregar dados das equipes:', error);
+    window.equipesData = [];
+}
 
 function mostrarDetalhes(equipeId) {
-    try {
-        const modal = new bootstrap.Modal(document.getElementById('detalhesModal'));
-        const content = document.getElementById('detalhesContent');
+    console.log('=== INICIANDO mostrarDetalhes ===');
+    console.log('Equipe ID:', equipeId);
+    
+    const modalElement = document.getElementById('detalhesModal');
+    const content = document.getElementById('detalhesContent');
+    
+    if (!modalElement || !content) {
+        alert('Erro: Elementos do modal não encontrados');
+        return;
+    }
+    
+    // Busca dados da equipe
+    let equipe = null;
+    if (window.equipesData && Array.isArray(window.equipesData)) {
+        equipe = window.equipesData.find(e => e.id == equipeId);
+    }
+    
+    console.log('Equipe encontrada:', equipe);
+    
+    let detalhesHtml = '';
+    
+    if (equipe && equipe.dados_ranking) {
+        const dados = equipe.dados_ranking;
         
-        // Busca dados da equipe
-        const equipe = equipesData.find(e => e.id == equipeId);
+        detalhesHtml = `
+            <h6><i class="fas fa-user"></i> ${equipe.nome}</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="text-primary">Resultados no Período:</h6>
+                    <ul class="list-unstyled">`;
         
-        if (equipe && equipe.dados_ranking) {
-            const dados = equipe.dados_ranking;
-            
-            let detalhesHtml = `
-                <h6><i class="fas fa-user"></i> ${equipe.nome}</h6>
-                <div class="row">
-                    <div class="col-md-6">
-                        <h6 class="text-primary">Resultados no Período:</h6>
-                        <ul class="list-unstyled">`;
-            
-            if (dados.pessoas_novas > 0) {
-                detalhesHtml += `<li><i class="fas fa-user-plus text-success"></i> Pessoas Novas: <strong>${dados.pessoas_novas}</strong></li>`;
-            }
-            if (dados.celulas_realizadas > 0) {
-                detalhesHtml += `<li><i class="fas fa-circle text-primary"></i> Células Realizadas: <strong>${dados.celulas_realizadas}</strong></li>`;
-            }
-            if (dados.celulas_elite > 0) {
-                detalhesHtml += `<li><i class="fas fa-star text-warning"></i> Células Elite: <strong>${dados.celulas_elite}</strong></li>`;
-            }
-            if (dados.pessoas_terca > 0) {
-                detalhesHtml += `<li><i class="fas fa-calendar text-info"></i> Pessoas Terça: <strong>${dados.pessoas_terca}</strong></li>`;
-            }
-            if (dados.pessoas_arena > 0) {
-                detalhesHtml += `<li><i class="fas fa-fire text-danger"></i> Pessoas Arena: <strong>${dados.pessoas_arena}</strong></li>`;
-            }
-            if (dados.pessoas_domingo > 0) {
-                detalhesHtml += `<li><i class="fas fa-church text-secondary"></i> Pessoas Domingo: <strong>${dados.pessoas_domingo}</strong></li>`;
-            }
-            if (dados.valor_arrecadacao > 0) {
-                detalhesHtml += `<li><i class="fas fa-dollar-sign text-success"></i> Arrecadação: <strong>R$ ${dados.valor_arrecadacao.toFixed(2)}</strong></li>`;
-            }
-            
-            detalhesHtml += `
-                        </ul>
-                    </div>
-                    <div class="col-md-6">
-                        <h6 class="text-warning">Pontuação Final:</h6>
-                        <div class="alert alert-warning">
-                            <h4 class="mb-0">
-                                <i class="fas fa-trophy"></i> 
-                                ${dados.pontuacao_ranking} pontos
-                            </h4>
-                            <small>Baseado no ranking comparativo</small>
-                        </div>
-                        <p class="text-muted small">
-                            <strong>Como funciona:</strong> Cada quesito gera um ranking entre todas as equipes. 
-                            1º lugar = 5pts, 2º = 3pts, 3º = 1pt.
-                        </p>
-                    </div>
-                </div>
-            `;
-            
-            content.innerHTML = detalhesHtml;
-        } else {
-            content.innerHTML = `
-                <div class="alert alert-warning">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    Nenhum dado encontrado para esta equipe no período selecionado.
-                </div>
-            `;
+        if (dados.pessoas_novas > 0) {
+            detalhesHtml += `<li><i class="fas fa-user-plus text-success"></i> Pessoas Novas: <strong>${dados.pessoas_novas}</strong></li>`;
+        }
+        if (dados.celulas_realizadas > 0) {
+            detalhesHtml += `<li><i class="fas fa-circle text-primary"></i> Células Realizadas: <strong>${dados.celulas_realizadas}</strong></li>`;
+        }
+        if (dados.celulas_elite > 0) {
+            detalhesHtml += `<li><i class="fas fa-star text-warning"></i> Células Elite: <strong>${dados.celulas_elite}</strong></li>`;
+        }
+        if (dados.pessoas_terca > 0) {
+            detalhesHtml += `<li><i class="fas fa-calendar text-info"></i> Pessoas Terça: <strong>${dados.pessoas_terca}</strong></li>`;
+        }
+        if (dados.pessoas_arena > 0) {
+            detalhesHtml += `<li><i class="fas fa-fire text-danger"></i> Pessoas Arena: <strong>${dados.pessoas_arena}</strong></li>`;
+        }
+        if (dados.pessoas_domingo > 0) {
+            detalhesHtml += `<li><i class="fas fa-church text-secondary"></i> Pessoas Domingo: <strong>${dados.pessoas_domingo}</strong></li>`;
+        }
+        if (dados.valor_arrecadacao > 0) {
+            detalhesHtml += `<li><i class="fas fa-dollar-sign text-success"></i> Arrecadação: <strong>R$ ${dados.valor_arrecadacao.toFixed(2)}</strong></li>`;
+        }
+        if (dados.revisao_vidas > 0) {
+            detalhesHtml += `<li><i class="fas fa-heart text-warning"></i> Revisão de Vidas: <strong>${dados.revisao_vidas}</strong></li>`;
         }
         
-        modal.show();
+        detalhesHtml += `
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="text-warning">Pontuação Final:</h6>
+                    <div class="alert alert-warning">
+                        <h4 class="mb-0">
+                            <i class="fas fa-trophy"></i> 
+                            ${dados.pontuacao_ranking} pontos
+                        </h4>
+                        <small>Baseado no ranking comparativo</small>
+                    </div>
+                    <p class="text-muted small">
+                        <strong>Como funciona:</strong> Cada quesito gera um ranking entre todas as equipes. 
+                        1º lugar = 5pts, 2º = 3pts, 3º = 1pt.
+                    </p>
+                </div>
+            </div>
+        `;
+    } else {
+        detalhesHtml = `
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                Nenhum dado encontrado para esta equipe no período selecionado.
+            </div>
+        `;
+    }
+    
+    // Preenche conteúdo
+    content.innerHTML = detalhesHtml;
+    
+    // Abre modal usando Bootstrap
+    try {
+        const bsModal = new bootstrap.Modal(modalElement);
+        bsModal.show();
+        console.log('Modal aberto com sucesso!');
     } catch (error) {
-        console.error('Erro ao mostrar detalhes:', error);
-        alert('Erro ao carregar detalhes da equipe.');
+        console.error('Erro ao abrir modal:', error);
+        alert('Erro ao abrir modal: ' + error.message);
     }
 }
 </script>

@@ -158,6 +158,14 @@
                             <input type="number" class="form-control" id="valor_arrecadacao_parceiro" name="valor_arrecadacao_parceiro" 
                                    min="0" step="0.01" value="{{ registro.valor_arrecadacao_parceiro or 0 }}" onchange="calcularPontuacao()">
                         </div>
+                        <div class="col-md-6">
+                            <label for="qtd_revisao_vidas" class="form-label">
+                                <i class="fas fa-heart text-warning"></i> Quantidade Revisão de Vidas
+                                <small class="text-muted">(10 pontos cada)</small>
+                            </label>
+                            <input type="number" class="form-control" id="qtd_revisao_vidas" name="qtd_revisao_vidas" 
+                                   min="0" value="{{ registro.qtd_revisao_vidas or 0 }}" onchange="calcularPontuacao()">
+                        </div>
                     </div>
 
                     <hr>
@@ -224,6 +232,10 @@ function calcularPontuacao() {
     // Parceiro de Deus
     const valorArrecadacao = parseFloat(document.getElementById('valor_arrecadacao_parceiro').value) || 0;
     pontos += valorArrecadacao * 10;
+    
+    // Revisão de Vidas
+    const revisaoVidas = parseInt(document.getElementById('qtd_revisao_vidas').value) || 0;
+    pontos += revisaoVidas * 10;
     
     document.getElementById('pontuacao_estimada').textContent = Math.round(pontos);
 }

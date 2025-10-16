@@ -28,7 +28,8 @@ PONTUACAO_CONFIG = {
     'pessoas_novas_arena': 10,
     'pessoas_domingo': 10,
     'pessoas_novas_domingo': 10,
-    'valor_arrecadacao': 10  # 10 pontos por real arrecadado
+    'valor_arrecadacao': 10,  # 10 pontos por real arrecadado
+    'revisao_vidas': 10  # 10 pontos por revisão de vida
 }
 
 # Sistema de pontuação por ranking (Placar 2)
@@ -67,6 +68,9 @@ def calcular_pontuacao(registro):
     # Parceiro de Deus (valor arrecadado)
     pontos += registro.get('valor_arrecadacao_parceiro', 0) * PONTUACAO_CONFIG['valor_arrecadacao']
     
+    # Revisão de Vidas
+    pontos += registro.get('qtd_revisao_vidas', 0) * PONTUACAO_CONFIG['revisao_vidas']
+    
     return int(pontos)
 
 def calcular_pontuacao_ranking(registros_periodo):
@@ -90,6 +94,7 @@ def calcular_pontuacao_ranking(registros_periodo):
                 'pessoas_domingo': 0,
                 'pessoas_novas_domingo': 0,
                 'valor_arrecadacao': 0,
+                'revisao_vidas': 0,
                 'pontuacao_ranking': 0
             }
         
@@ -104,13 +109,14 @@ def calcular_pontuacao_ranking(registros_periodo):
         dados['pessoas_domingo'] += registro.get('qtd_pessoas_domingo', 0)
         dados['pessoas_novas_domingo'] += registro.get('qtd_pessoas_novas_domingo', 0)
         dados['valor_arrecadacao'] += registro.get('valor_arrecadacao_parceiro', 0)
+        dados['revisao_vidas'] += registro.get('qtd_revisao_vidas', 0)
     
     # Lista de quesitos para ranking
     quesitos = [
         'pessoas_novas', 'celulas_realizadas', 'celulas_elite',
         'pessoas_terca', 'pessoas_novas_terca', 'pessoas_arena',
         'pessoas_novas_arena', 'pessoas_domingo', 'pessoas_novas_domingo',
-        'valor_arrecadacao'
+        'valor_arrecadacao', 'revisao_vidas'
     ]
     
     # Para cada quesito, cria ranking e atribui pontos
@@ -122,33 +128,54 @@ def calcular_pontuacao_ranking(registros_periodo):
             reverse=True
         )
         
-        # Atribui pontos baseado na posição
-        posicao = 1
-        valor_anterior = None
+        # Filtra apenas equipes com valor > 0
+        ranking_quesito = [(equipe_id, dados) for equipe_id, dados in ranking_quesito if dados[quesito] > 0]
+        
+        if not ranking_quesito:
+            continue
+        
+        # Cria grupos de empate
+        grupos_empate = []
+        grupo_atual = []
+        valor_atual_grupo = None
         
         for equipe_id, dados in ranking_quesito:
-            valor_atual = dados[quesito]
+            valor = dados[quesito]
             
-            # Se o valor é 0, não ganha pontos
-            if valor_atual == 0:
-                continue
-                
-            # Se empatou com a posição anterior, mantém a mesma posição
-            if valor_anterior is not None and valor_atual != valor_anterior:
-                # Conta quantas equipes tiveram o valor anterior
-                equipes_valor_anterior = sum(1 for _, d in ranking_quesito if d[quesito] == valor_anterior)
-                posicao += equipes_valor_anterior
+            if valor_atual_grupo is None or valor == valor_atual_grupo:
+                # Primeira equipe ou empate com o grupo atual
+                grupo_atual.append((equipe_id, dados))
+                valor_atual_grupo = valor
+            else:
+                # Valor diferente, finaliza grupo atual e inicia novo
+                grupos_empate.append((valor_atual_grupo, grupo_atual))
+                grupo_atual = [(equipe_id, dados)]
+                valor_atual_grupo = valor
+        
+        # Adiciona o último grupo
+        if grupo_atual:
+            grupos_empate.append((valor_atual_grupo, grupo_atual))
+        
+        # Atribui pontos por grupo de empate
+        posicao_atual = 1
+        
+        for valor_grupo, equipes_grupo in grupos_empate:
+            # Determina quantos pontos este grupo recebe baseado na posição
+            if posicao_atual == 1:
+                pontos = PONTUACAO_RANKING['primeiro_lugar']
+            elif posicao_atual == 2:
+                pontos = PONTUACAO_RANKING['segundo_lugar']
+            elif posicao_atual == 3:
+                pontos = PONTUACAO_RANKING['terceiro_lugar']
+            else:
+                pontos = PONTUACAO_RANKING['demais_posicoes']
             
-            # Atribui pontos baseado na posição
-            if posicao == 1:
-                dados_por_equipe[equipe_id]['pontuacao_ranking'] += PONTUACAO_RANKING['primeiro_lugar']
-            elif posicao == 2:
-                dados_por_equipe[equipe_id]['pontuacao_ranking'] += PONTUACAO_RANKING['segundo_lugar']
-            elif posicao == 3:
-                dados_por_equipe[equipe_id]['pontuacao_ranking'] += PONTUACAO_RANKING['terceiro_lugar']
-            # Posições 4+ não ganham pontos
+            # Todas as equipes do grupo recebem a mesma pontuação
+            for equipe_id, dados in equipes_grupo:
+                dados_por_equipe[equipe_id]['pontuacao_ranking'] += pontos
             
-            valor_anterior = valor_atual
+            # Atualiza posição para o próximo grupo
+            posicao_atual += len(equipes_grupo)
     
     return dados_por_equipe
 
@@ -277,7 +304,7 @@ def get_equipes_por_periodo_ranking(data_inicio, data_fim):
                     'pessoas_novas': 0, 'celulas_realizadas': 0, 'celulas_elite': 0,
                     'pessoas_terca': 0, 'pessoas_novas_terca': 0, 'pessoas_arena': 0,
                     'pessoas_novas_arena': 0, 'pessoas_domingo': 0, 'pessoas_novas_domingo': 0,
-                    'valor_arrecadacao': 0, 'pontuacao_ranking': 0
+                    'valor_arrecadacao': 0, 'revisao_vidas': 0, 'pontuacao_ranking': 0
                 }
         
         # Ordena por pontuação de ranking
@@ -312,7 +339,7 @@ def get_rankings_por_quesito(data_inicio, data_fim):
                     'pessoas_novas': 0, 'celulas_realizadas': 0, 'celulas_elite': 0,
                     'pessoas_terca': 0, 'pessoas_novas_terca': 0, 'pessoas_arena': 0,
                     'pessoas_novas_arena': 0, 'pessoas_domingo': 0, 'pessoas_novas_domingo': 0,
-                    'valor_arrecadacao': 0
+                    'valor_arrecadacao': 0, 'revisao_vidas': 0
                 }
             
             dados = dados_por_equipe[equipe_id]
@@ -326,6 +353,7 @@ def get_rankings_por_quesito(data_inicio, data_fim):
             dados['pessoas_domingo'] += registro.get('qtd_pessoas_domingo', 0)
             dados['pessoas_novas_domingo'] += registro.get('qtd_pessoas_novas_domingo', 0)
             dados['valor_arrecadacao'] += registro.get('valor_arrecadacao_parceiro', 0)
+            dados['revisao_vidas'] += registro.get('qtd_revisao_vidas', 0)
         
         # Lista de quesitos para ranking
         quesitos = [
@@ -338,7 +366,8 @@ def get_rankings_por_quesito(data_inicio, data_fim):
             ('pessoas_novas_arena', 'Pessoas Novas Arena', 'fas fa-user-plus', 'danger'),
             ('pessoas_domingo', 'Pessoas Domingo', 'fas fa-church', 'secondary'),
             ('pessoas_novas_domingo', 'Pessoas Novas Domingo', 'fas fa-user-plus', 'secondary'),
-            ('valor_arrecadacao', 'Arrecadação', 'fas fa-dollar-sign', 'success')
+            ('valor_arrecadacao', 'Arrecadação', 'fas fa-dollar-sign', 'success'),
+            ('revisao_vidas', 'Revisão de Vidas', 'fas fa-heart', 'warning')
         ]
         
         rankings = {}
@@ -356,9 +385,6 @@ def get_rankings_por_quesito(data_inicio, data_fim):
             ranking_quesito = [(equipe_id, valor) for equipe_id, valor in ranking_quesito if valor > 0]
             
             if ranking_quesito:
-                # Pega os top 3
-                top_3 = ranking_quesito[:3]
-                
                 rankings[quesito] = {
                     'nome': nome,
                     'icone': icone,
@@ -366,22 +392,68 @@ def get_rankings_por_quesito(data_inicio, data_fim):
                     'vencedores': []
                 }
                 
-                for i, (equipe_id, valor) in enumerate(top_3):
-                    equipe = equipes_dict.get(equipe_id, {'nome': 'Desconhecida', 'logo_url': ''})
-                    posicao = i + 1
-                    
-                    if quesito == 'valor_arrecadacao':
-                        valor_formatado = f"R$ {valor:.2f}"
+                # Cria grupos de empate para exibição correta
+                grupos_empate = []
+                grupo_atual = []
+                valor_atual_grupo = None
+                
+                for equipe_id, valor in ranking_quesito:
+                    if valor_atual_grupo is None or valor == valor_atual_grupo:
+                        # Primeira equipe ou empate com o grupo atual
+                        grupo_atual.append((equipe_id, valor))
+                        valor_atual_grupo = valor
                     else:
-                        valor_formatado = str(int(valor))
+                        # Valor diferente, finaliza grupo atual e inicia novo
+                        grupos_empate.append((valor_atual_grupo, grupo_atual))
+                        grupo_atual = [(equipe_id, valor)]
+                        valor_atual_grupo = valor
+                
+                # Adiciona o último grupo
+                if grupo_atual:
+                    grupos_empate.append((valor_atual_grupo, grupo_atual))
+                
+                # Processa grupos para exibir top 3 posições (considerando empates)
+                posicao_atual = 1
+                total_vencedores = 0
+                
+                for valor_grupo, equipes_grupo in grupos_empate:
+                    if total_vencedores >= 3:
+                        break
                     
-                    rankings[quesito]['vencedores'].append({
-                        'posicao': posicao,
-                        'equipe_nome': equipe['nome'],
-                        'equipe_logo': equipe.get('logo_url', ''),
-                        'valor': valor_formatado,
-                        'pontos': 5 if posicao == 1 else (3 if posicao == 2 else 1)
-                    })
+                    # Determina quantos pontos este grupo recebe
+                    if posicao_atual == 1:
+                        pontos = 5
+                    elif posicao_atual == 2:
+                        pontos = 3
+                    elif posicao_atual == 3:
+                        pontos = 1
+                    else:
+                        pontos = 0
+                    
+                    # Adiciona todas as equipes do grupo empatado
+                    for equipe_id, valor in equipes_grupo:
+                        if total_vencedores >= 3:
+                            break
+                            
+                        equipe = equipes_dict.get(equipe_id, {'nome': 'Desconhecida', 'logo_url': ''})
+                        
+                        if quesito == 'valor_arrecadacao':
+                            valor_formatado = f"R$ {valor:.2f}"
+                        else:
+                            valor_formatado = str(int(valor))
+                        
+                        rankings[quesito]['vencedores'].append({
+                            'posicao': posicao_atual,
+                            'equipe_nome': equipe['nome'],
+                            'equipe_logo': equipe.get('logo_url', ''),
+                            'valor': valor_formatado,
+                            'pontos': pontos
+                        })
+                        
+                        total_vencedores += 1
+                    
+                    # Atualiza posição para o próximo grupo
+                    posicao_atual += len(equipes_grupo)
         
         return rankings
     except Exception as e:
@@ -466,6 +538,7 @@ def criar_registro(dados):
             'qtd_pessoas_domingo': dados.get('qtd_pessoas_domingo', 0),
             'qtd_pessoas_novas_domingo': dados.get('qtd_pessoas_novas_domingo', 0),
             'valor_arrecadacao_parceiro': dados.get('valor_arrecadacao_parceiro', 0),
+            'qtd_revisao_vidas': dados.get('qtd_revisao_vidas', 0),
             'pontuacao': pontuacao
         }).execute()
         
@@ -632,7 +705,8 @@ def registrar_atividade():
             'qtd_pessoas_novas_arena': int(request.form.get('qtd_pessoas_novas_arena', 0)),
             'qtd_pessoas_domingo': int(request.form.get('qtd_pessoas_domingo', 0)),
             'qtd_pessoas_novas_domingo': int(request.form.get('qtd_pessoas_novas_domingo', 0)),
-            'valor_arrecadacao_parceiro': float(request.form.get('valor_arrecadacao_parceiro', 0))
+            'valor_arrecadacao_parceiro': float(request.form.get('valor_arrecadacao_parceiro', 0)),
+            'qtd_revisao_vidas': int(request.form.get('qtd_revisao_vidas', 0))
         }
         
         pontuacao = criar_registro(dados)
@@ -768,6 +842,7 @@ def gerar_analise_com_ia(registros, equipes, tipo_analise, data_inicio, data_fim
                 'pessoas_arena': 0,
                 'pessoas_domingo': 0,
                 'arrecadacao': 0,
+                'revisao_vidas': 0,
                 'registros_count': 0,
                 'vitorias_ranking': []  # Para armazenar em que quesitos a equipe venceu
             }
@@ -788,6 +863,7 @@ def gerar_analise_com_ia(registros, equipes, tipo_analise, data_inicio, data_fim
         dados['pessoas_arena'] += registro.get('qtd_pessoas_arena', 0)
         dados['pessoas_domingo'] += registro.get('qtd_pessoas_domingo', 0)
         dados['arrecadacao'] += registro.get('valor_arrecadacao_parceiro', 0)
+        dados['revisao_vidas'] += registro.get('qtd_revisao_vidas', 0)
         dados['registros_count'] += 1
     
     # Para Placar 2, identifica vitórias de cada equipe
@@ -1376,7 +1452,8 @@ def editar_registro_route(registro_id):
                 'qtd_pessoas_novas_arena': int(request.form.get('qtd_pessoas_novas_arena', 0)),
                 'qtd_pessoas_domingo': int(request.form.get('qtd_pessoas_domingo', 0)),
                 'qtd_pessoas_novas_domingo': int(request.form.get('qtd_pessoas_novas_domingo', 0)),
-                'valor_arrecadacao_parceiro': float(request.form.get('valor_arrecadacao_parceiro', 0))
+                'valor_arrecadacao_parceiro': float(request.form.get('valor_arrecadacao_parceiro', 0)),
+                'qtd_revisao_vidas': int(request.form.get('qtd_revisao_vidas', 0))
             }
             
             # Recalcula pontuação
