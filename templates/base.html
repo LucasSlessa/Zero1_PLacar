@@ -126,15 +126,18 @@
                         <ul class="dropdown-menu" aria-labelledby="placarDropdown" id="placarDropdownMenu">
                             <li>
                                 <a class="dropdown-item" href="{{ url_for('placar') }}" 
-                                   onclick="navegarPara('{{ url_for('placar') }}', event)">
+                                   onclick="navegarPlacar1(event)">
                                     <i class="fas fa-trophy text-success me-2"></i> Placar 1 - Tradicional
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item" href="{{ url_for('placar2') }}" 
-                                   onclick="navegarPara('{{ url_for('placar2') }}', event)">
-                                    <i class="fas fa-chart-line text-warning me-2"></i> Placar 2 - Ranking
-                                    <span class="badge bg-warning text-dark ms-2">NOVO</span>
+                                   onclick="navegarPlacar2(event)"
+                                   style="display: flex; align-items: center; justify-content: space-between;">
+                                    <span>
+                                        <i class="fas fa-chart-line text-warning me-2"></i> Placar 2 - Ranking
+                                    </span>
+                                    <span class="badge bg-warning text-dark">NOVO</span>
                                 </a>
                             </li>
                         </ul>
@@ -272,11 +275,11 @@
         console.log('Dropdown toggled:', dropdownAberto);
     }
     
-    function navegarPara(url, event) {
+    function navegarPlacar1(event) {
         event.preventDefault();
         event.stopPropagation();
         
-        console.log('Navegando para:', url);
+        console.log('=== NAVEGANDO PARA PLACAR 1 ===');
         
         // Fechar dropdown
         const dropdownMenu = document.getElementById('placarDropdownMenu');
@@ -284,7 +287,25 @@
         dropdownAberto = false;
         
         // Navegar
-        window.location.href = url;
+        window.location.href = '{{ url_for("placar") }}';
+    }
+    
+    function navegarPlacar2(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        console.log('=== NAVEGANDO PARA PLACAR 2 ===');
+        console.log('Event:', event);
+        console.log('Target:', event.target);
+        
+        // Fechar dropdown
+        const dropdownMenu = document.getElementById('placarDropdownMenu');
+        dropdownMenu.classList.remove('show');
+        dropdownAberto = false;
+        
+        // Navegar
+        console.log('Redirecionando para Placar 2...');
+        window.location.href = '{{ url_for("placar2") }}';
     }
     
     // Fechar dropdown ao clicar fora
